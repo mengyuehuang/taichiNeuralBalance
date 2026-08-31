@@ -1,0 +1,9 @@
+mne
+eeglabio
+numpy
+pandas
+scipy
+scikit-learn
+nilearn
+mne-connectivity
+openpyxl

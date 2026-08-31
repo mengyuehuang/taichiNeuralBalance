@@ -1,0 +1,46 @@
+# Local configs
+config.local.json
+**/config.local.json
+
+# Raw data and generated outputs
+outputs/
+auto_fc_pipeline_v1/outputs/
+auto_fc_pipeline_v2/outputs/
+TCP_EEG_sync-selected/
+references/
+
+# Python/cache
+__pycache__/
+**/__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# EEG/raw/intermediate data
+*.fif
+*.fif.gz
+*.eeg
+*.vhdr
+*.vmrk
+*.set
+*.fdt
+*.mat
+*.edf
+*.bdf
+*.cnt
+*.cdt
+*.dat
+
+# Generated review/export artifacts
+*.png
+*.csv
+*.xlsx
+
+# Local OS/editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Root-level lab files kept locally, not in the public repo
+MFPRL_default.sfp
+Preprocessing First Steps.py
+Functional Connectivity Documentation.pdf

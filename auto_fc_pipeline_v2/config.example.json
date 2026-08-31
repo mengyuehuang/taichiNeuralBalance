@@ -1,0 +1,99 @@
+{
+  "paths": {
+    "backprojected_dir": "TODO/set/path/to/backprojected_files",
+    "block_data_dir": "TODO/set/path/to/block_level_eeg",
+    "source_estimates_dir": "TODO/set/path/to/source_estimates",
+    "parcel_timeseries_dir": "TODO/set/path/to/parcel_timeseries",
+    "output_dir": "TODO/set/path/to/static_fc_outputs",
+    "montage_path": "TODO/set/path/to/MFPRL_UPDATED_V2.sfp",
+    "subjects_dir": "TODO/set/path/to/mne_subjects_dir"
+  },
+  "inputs": {
+    "backprojected_format": "eeglab_set",
+    "backprojected_glob": "*.set",
+    "parcel_timeseries_glob": "*.npy"
+  },
+  "prepare_blocks": {
+    "export_fif": true,
+    "boundary_policy": "report_only"
+  },
+  "montage_check": {
+    "block_file_glob": "*.fif",
+    "ignore_channels": ["GND"],
+    "rename_numeric_channels_from_montage_order": true,
+    "numeric_channel_prefix": "Ch",
+    "skip_numeric_channels": [21],
+    "write_montage_aligned_fif": true,
+    "montage_aligned_subdir": "montage_aligned"
+  },
+  "source_localization": {
+    "input_subdir": "montage_aligned",
+    "input_glob": "*_montage_raw.fif",
+    "exclude_channels": ["GND", "LHEye", "RHEye", "RVEye", "Lneck", "Rneck"],
+    "method": "eLORETA",
+    "subject": "fsaverage",
+    "trans": "fsaverage",
+    "spacing": "ico5",
+    "bem_name": "fsaverage-5120-5120-5120-bem-sol.fif",
+    "snr": 3.0,
+    "loose": 0.2,
+    "depth": 0.8,
+    "mindist": 5.0,
+    "covariance_method": ["shrunk", "empirical"],
+    "set_average_reference_projection": true,
+    "one_inverse_operator_per_participant": true,
+    "separate_inverse_by_frequency_band": false,
+    "requires_colab_or_cluster": true
+  },
+  "parcel_extraction": {
+    "atlas": "Schaefer2018",
+    "target_n_parcels": 100,
+    "drop_medial_wall_labels_if_present": true,
+    "output_signed_timeseries": true
+  },
+  "upstream_preprocessing": {
+    "matlab_reference_folder": "../references/MatLab analysis code",
+    "step1_script": "Step1_Run_EEG_HC_2021_YH.m",
+    "step2_batch_scripts": [
+      "2. Run_EEG_HC1_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC2_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC3_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC4_CleanTimeData_Bunch_YH.m"
+    ],
+    "reported_filter_hz": [1.0, 55.0],
+    "reported_line_noise_hz": 60.0,
+    "reported_reference": "mastoid",
+    "epoch_rejection_seconds": 1.0,
+    "epoch_rejection_criterion": 6.0,
+    "bad_channel_kurtosis_criterion_reported_by_lab": 1.61
+  },
+  "naming": {
+    "subject_regex": "(sub-[A-Za-z0-9]+|[A-Za-z]+_?\\d{3,}|\\d{3,})",
+    "block_patterns": {
+      "non_perturbation": ["nonpert", "non_pert", "non-pert", "no-perturb", "noperturb", "baseline", "HC1", "HC4"],
+      "perturbation": ["perturbation", "perturb", "stim", "HC2", "HC3"]
+    }
+  },
+  "timeseries": {
+    "sfreq": 1000.0,
+    "orientation": "parcels_by_time",
+    "expected_n_parcels": 100,
+    "drop_last_n_labels": 0
+  },
+  "frequency_bands": {
+    "alpha": [8.0, 12.0],
+    "beta": [13.0, 30.0]
+  },
+  "filtering": {
+    "method": "sos_iir",
+    "order": 4,
+    "edge_trim_seconds": 2.0
+  },
+  "connectivity": {
+    "orthogonalization": "symmetric",
+    "save_csv": true,
+    "save_npy": true,
+    "apply_absolute_value": false,
+    "threshold": null
+  }
+}
