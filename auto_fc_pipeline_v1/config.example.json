@@ -33,6 +33,7 @@
     "n_components": 0.99,
     "n_components_retry": 0.999,
     "min_components_before_retry": 10,
+    "force_min_components": 10,
     "method": "infomax",
     "fit_params": {
       "extended": true
@@ -42,6 +43,9 @@
     "set_average_reference_before_ica": true,
     "exclude_channels": ["GND", "LHEye", "RHEye", "RVEye", "Lneck", "Rneck"],
     "auto_artifact_labels": ["eye blink", "muscle artifact", "heart beat", "line noise", "channel noise"],
+    "flag_low_confidence_labels": true,
+    "low_confidence_probability_threshold": 0.8,
+    "write_review_xlsx": true,
     "manual_review_required": true,
     "apply_without_review": false
   },

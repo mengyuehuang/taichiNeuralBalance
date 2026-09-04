@@ -185,10 +185,28 @@ This script:
 1. Loads files from `PreICA/`.
 2. Fits ICA while skipping `BAD_*` annotations.
 3. Applies common average reference before ICA when configured.
-4. Saves the ICA solution.
-5. Runs ICLabel if `mne-icalabel` is installed.
-6. Saves review CSV files, component topography figures, 0-10 s source trace
+4. If the automatic ICA setting gives fewer than 10 components, reruns ICA with
+   `n_components=10` so there are enough components to review.
+5. Saves the ICA solution.
+6. Runs ICLabel if `mne-icalabel` is installed.
+7. Saves review CSV files, component topography figures, 0-10 s source trace
    pages, and a PSD grid.
+
+The review table can also flag low-confidence ICLabel results. By default,
+components with ICLabel probability below `0.8` get `low_confidence_label=True`.
+If `write_review_xlsx` is on, the script also writes an Excel copy with those
+rows highlighted.
+
+If you only need to refresh the review CSV/XLSX and figures from an existing
+ICA file, run:
+
+```powershell
+python scripts/04_run_ica.py --config config.local.json --reuse-existing-ica
+```
+
+On Windows, the script also writes MNE/numba cache files inside the project
+folder so MNE does not get stuck trying to write to a locked user-level config
+folder.
 
 Outputs:
 

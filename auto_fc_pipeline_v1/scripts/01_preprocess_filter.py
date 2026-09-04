@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+NUMBA_CACHE_DIR = ROOT.parent / ".numba_cache"
+NUMBA_CACHE_DIR.mkdir(exist_ok=True)
+os.environ.setdefault("NUMBA_CACHE_DIR", str(NUMBA_CACHE_DIR))
+MNE_FAKE_HOME = ROOT.parent / ".mne_fake_home"
+MNE_FAKE_HOME.mkdir(exist_ok=True)
+os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(MNE_FAKE_HOME))
 
 from fc_pipeline.config import load_config, resolve_path
 from fc_pipeline.io import drop_configured_channels, find_raw_files, infer_subject_id, read_raw

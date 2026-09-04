@@ -49,7 +49,11 @@ auto_fc_pipeline_v1/outputs/v1_preica_test
 ```
 
 That folder currently contains ICA review outputs for participants `101`-`105`,
-blocks `HC1`-`HC4`.
+`221`, `402`, `404`, and `406`-`416`, blocks `HC1`-`HC4`, where HC files are
+present.
+
+Participants `401`, `403`, and `410` were checked in the selected local EEG
+folder, but only `EC`, `EO`, and `NC` files were present, not HC files.
 
 ## Data Safety
 
@@ -65,8 +69,7 @@ outputs/
 auto_fc_pipeline_v1/outputs/
 config.local.json
 *.fif, *.eeg, *.vhdr, *.vmrk, *.set, *.fdt, *.mat
-*.png, *.csv
+*.png, *.csv, *.xlsx
 ```
 
 Use each pipeline folder's README for exact commands.
-

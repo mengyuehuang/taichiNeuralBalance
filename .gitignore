@@ -1,6 +1,8 @@
 # Local configs
 config.local.json
 **/config.local.json
+config.*.tmp.json
+**/config.*.tmp.json
 
 # Raw data and generated outputs
 outputs/
@@ -14,6 +16,9 @@ __pycache__/
 **/__pycache__/
 *.pyc
 .ipynb_checkpoints/
+.numba_cache/
+.mne_fake_home/
+mne_importtime*.log
 
 # EEG/raw/intermediate data
 *.fif

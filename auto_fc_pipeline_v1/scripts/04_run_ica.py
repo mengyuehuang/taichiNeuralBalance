@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+NUMBA_CACHE_DIR = ROOT.parent / ".numba_cache"
+NUMBA_CACHE_DIR.mkdir(exist_ok=True)
+os.environ.setdefault("NUMBA_CACHE_DIR", str(NUMBA_CACHE_DIR))
+MNE_FAKE_HOME = ROOT.parent / ".mne_fake_home"
+MNE_FAKE_HOME.mkdir(exist_ok=True)
+os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(MNE_FAKE_HOME))
 
 import mne
 import pandas as pd
@@ -30,6 +38,11 @@ def main() -> None:
         "--figures-only",
         action="store_true",
         help="Redraw ICA review figures from saved ICA files without updating review CSVs.",
+    )
+    parser.add_argument(
+        "--reuse-existing-ica",
+        action="store_true",
+        help="Reuse saved ICA files and update review CSV/XLSX plus figures without refitting ICA.",
     )
     parser.add_argument(
         "--include-regex",
@@ -80,12 +93,18 @@ def main() -> None:
             print(f"Saved ICA review figures from existing ICA: {subject_id}")
             continue
 
-        # This mirrors Yang's intent: fit ICA on cleaned preICA data while
-        # ignoring chunks annotated as BAD during the 1-second QC step.
-        ica = fit_ica_with_retry(raw, picks, ica_config)
+        if args.reuse_existing_ica:
+            if not ica_path.exists():
+                raise FileNotFoundError(f"No saved ICA file found for {subject_id}: {ica_path}")
+            ica = mne.preprocessing.read_ica(ica_path)
+            print(f"Loaded existing ICA solution: {ica_path}")
+        else:
+            # This mirrors Yang's intent: fit ICA on cleaned preICA data while
+            # ignoring chunks annotated as BAD during the 1-second QC step.
+            ica = fit_ica_with_retry(raw, picks, ica_config)
 
-        ica.save(ica_path, overwrite=True)
-        print(f"Saved ICA solution: {ica_path}")
+            ica.save(ica_path, overwrite=True)
+            print(f"Saved ICA solution: {ica_path}")
 
         labels, probabilities = label_ica_components(raw, ica)
         subject_review_dir = participant_output_dir(review_dir, subject_id)
@@ -100,6 +119,7 @@ def main() -> None:
         try:
             review_table.to_csv(review_path, index=False)
             print(f"Saved ICA review table: {review_path}")
+            save_review_workbook(review_table, review_path, ica_config)
         except PermissionError:
             print(f"Review table is open or locked; keeping existing file: {review_path}")
 
@@ -140,10 +160,11 @@ def label_ica_components(raw: mne.io.BaseRaw, ica: ICA) -> tuple[list[str], list
 
 
 def fit_ica_with_retry(raw: mne.io.BaseRaw, picks: list[int], ica_config: dict) -> ICA:
-    """Fit ICA, retrying with a higher variance threshold if too few ICs result."""
+    """Fit ICA and retry when variance-based PCA keeps too few components."""
     primary_n_components = ica_config.get("n_components", 0.99)
     retry_n_components = ica_config.get("n_components_retry", 0.999)
     min_components = int(ica_config.get("min_components_before_retry", 0))
+    forced_min_components = int(ica_config.get("force_min_components", min_components))
 
     try:
         ica = fit_single_ica(raw, picks, ica_config, primary_n_components)
@@ -163,6 +184,21 @@ def fit_ica_with_retry(raw: mne.io.BaseRaw, picks: list[int], ica_config: dict) 
             f"retrying with n_components={retry_n_components}."
         )
         ica = fit_single_ica(raw, picks, ica_config, retry_n_components)
+        n_components = int(getattr(ica, "n_components_", 0) or 0)
+
+    # If the variance-based choices still keep too few ICs, ask MNE for an
+    # explicit component count so reviewers have enough components to inspect.
+    if forced_min_components and n_components < forced_min_components:
+        if forced_min_components > len(picks):
+            raise ValueError(
+                f"force_min_components={forced_min_components} exceeds available "
+                f"ICA picks ({len(picks)})."
+            )
+        print(
+            f"Only {n_components} ICA components selected after retry; "
+            f"forcing n_components={forced_min_components}."
+        )
+        ica = fit_single_ica(raw, picks, ica_config, forced_min_components)
     return ica
 
 
@@ -194,13 +230,21 @@ def build_review_table(
     ica_config: dict,
 ) -> pd.DataFrame:
     auto_artifact_labels = {label.lower() for label in ica_config.get("auto_artifact_labels", [])}
+    flag_low_confidence = bool(ica_config.get("flag_low_confidence_labels", True))
+    low_confidence_threshold = float(ica_config.get("low_confidence_probability_threshold", 0.8))
     rows = []
     for component, (label, probability) in enumerate(zip(labels, probabilities)):
+        low_confidence_label = bool(
+            flag_low_confidence
+            and pd.notna(probability)
+            and float(probability) < low_confidence_threshold
+        )
         rows.append(
             {
                 "component": component,
                 "iclabel": label,
                 "iclabel_probability": probability,
+                "low_confidence_label": low_confidence_label,
                 "auto_exclude": str(label).lower() in auto_artifact_labels,
                 "review_exclude1": "",
                 "reviewer1": "",
@@ -214,6 +258,32 @@ def build_review_table(
             }
         )
     return pd.DataFrame(rows)
+
+
+def save_review_workbook(review_table: pd.DataFrame, review_path: Path, ica_config: dict) -> None:
+    """Optionally save an Excel review sheet with low-confidence rows highlighted."""
+    if not ica_config.get("write_review_xlsx", True):
+        return
+
+    xlsx_path = review_path.with_suffix(".xlsx")
+    try:
+        from openpyxl.styles import PatternFill
+
+        with pd.ExcelWriter(xlsx_path, engine="openpyxl") as writer:
+            review_table.to_excel(writer, index=False, sheet_name="ica_review")
+            worksheet = writer.sheets["ica_review"]
+            highlight = PatternFill(fill_type="solid", fgColor="FFF2CC")
+
+            columns = {cell.value: cell.column for cell in worksheet[1]}
+            flag_col = columns.get("low_confidence_label")
+            if flag_col:
+                for row_idx in range(2, worksheet.max_row + 1):
+                    if str(worksheet.cell(row=row_idx, column=flag_col).value).lower() == "true":
+                        for col_idx in range(1, worksheet.max_column + 1):
+                            worksheet.cell(row=row_idx, column=col_idx).fill = highlight
+        print(f"Saved highlighted ICA review workbook: {xlsx_path}")
+    except ImportError:
+        print("openpyxl is not installed; skipped highlighted ICA review workbook.")
 
 
 def merge_existing_review(new_table: pd.DataFrame, review_path: Path) -> pd.DataFrame:
