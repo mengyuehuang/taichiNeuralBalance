@@ -289,15 +289,30 @@ v1 Backprojected/
 -> alpha/beta static connectivity matrices
 ```
 
-## Things To Confirm Before Real Use
+## Current Choices
 
-- Whether the selected Box/raw folder is the final dataset for this analysis.
-- Whether all raw files should be processed or only the HC1-HC4 files.
-- Monitor whether physical channel 21 behaves consistently across participants.
-- The current montage is `MFPRL_UPDATED_V2.sfp`.
-- Current v1 default uses true 1-second chunking for pre-ICA noisy-segment QC.
-- Which channels should be excluded from ICA fitting.
-- Common average reference is currently turned on before ICA.
-- ICA components must be manually reviewed before final backprojection.
-- Whether the output should be continuous HC blocks or epoched perturbation
-  files for any specific side analysis.
+These are the choices currently used in v1:
+
+- Process only HC files for this pipeline.
+- Skip physical channel 21 when loading the raw BrainVision files.
+- Use `MFPRL_UPDATED_V2.sfp` as the montage file.
+- Use true 1-second chunks for pre-ICA noisy-segment QC.
+- Use common average reference before ICA.
+- Exclude `GND`, `LHEye`, `RHEye`, `RVEye`, `Lneck`, and `Rneck` from ICA
+  fitting.
+- Force at least 10 ICA components when the automatic setting keeps too few.
+- Flag low-confidence ICLabel results with `low_confidence_label`; Excel review
+  files highlight those rows.
+- Require manual ICA review before creating final backprojected files.
+
+## Still To Confirm / Watch
+
+- Confirm whether the current raw EEG folder is the complete final dataset to process: TCP_EEG_sync-selected.
+- Confirm whether participants `401`, `403`, and `410` truly have no HC files
+  or whether those files are stored elsewhere.
+- Watch lower-component blocks during review, especially blocks that were forced
+  to 10 components.
+- Decide whether the ICLabel 1-100 Hz warning needs any special handling. The
+  current preprocessing follows Yang's 1-55 Hz setting.
+- Confirm after manual review whether the backprojected output is ready for v2
+  source localization and connectivity.
