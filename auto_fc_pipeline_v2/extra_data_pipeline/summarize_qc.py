@@ -46,7 +46,7 @@ def draw(matrices,counts,names,path,title,footnote):
 
 def main():
     global OUT
-    # Preserve historical QC checkpoints and summaries. Updated teacher-cohort
+    # Preserve historical QC checkpoints and summaries. Updated selected-cohort
     # summaries are a separate view, never a rewrite of the original QC run.
     source_out=OUT
     # Older running QC batches may have been started before the sensitivity
@@ -60,12 +60,12 @@ def main():
     from fc_pipeline_v2.cohort_policy import is_excluded, participant_decision, DEFAULT_POLICY
     excluded=[r['participant'] for r in reports if is_excluded(r['participant'])]
     reports=[r for r in reports if not is_excluded(r['participant'])]
-    OUT=source_out/'teacher_cohort'
+    OUT=source_out/'selected_cohort'
     OUT.mkdir(exist_ok=True)
     (OUT/'cohort_provenance.json').write_text(json.dumps({'policy':json.loads(DEFAULT_POLICY.read_text()),'source_qc':str(source_out),'excluded_existing_reports':excluded,'note':'Retained does not mean QC-approved. Existing legacy TCP rank policy remains unchanged; identity warnings do not resolve independence.'},indent=2),encoding='utf-8')
     for report in reports:
         (OUT/report['participant']).mkdir(exist_ok=True)
-        report['teacher_cohort_decision']=participant_decision(report['participant'])
+        report['selected_cohort_decision']=participant_decision(report['participant'])
     # Reapply current exploratory policy to all checkpoints, including the pilot
     # and checkpoints made before the residual-line-power flag was introduced.
     for report in reports:
@@ -168,9 +168,9 @@ def main():
                 associations.append({'study':study,'band':band,'n':len(f),'rank_vs_mean_FC_spearman':float(stat.statistic),'note':'Descriptive dependence check; not a group-effect test'})
     csv_write(OUT/'rank_fc_associations.csv',associations)
     summary={'participants_completed_qc':len(reports),'recording_band_rows':len(rows),'technical_candidate_rows':sum(r['status']=='technical_candidate' for r in rows),'review_required_rows':sum(r['status']=='review_required' for r in rows),'error_files':[p.name for p in OUT.glob('*_error.txt')],'formal_group_statistics_ready':False,'blocking_reasons':['100-parcel method is visualization/QC in supplied reference; confirm intended inferential endpoint','Legacy TCP source rank policy and threshold sensitivity not harmonized with corrected PCD','Cross-study participant overlap and protocol equivalence not confirmed','Screening cutoffs are operational choices, not validated universal acceptance rules','Waveform/PSD plots require human inspection; automated screens cannot establish artifact-free recordings'],'reference':'references/Step0b_Connectome_Sanity_Check_100parcels.ipynb; reference analyzes EC/EO, current outputs are HC','figure_directory':str(groups.resolve())}
-    summary['blocking_reasons']=[r.replace('Cross-study participant overlap and protocol equivalence not confirmed','Participant identity overlap unresolved; matching HC protocols confirmed by teacher') for r in summary['blocking_reasons']]
+    summary['blocking_reasons']=[r.replace('Cross-study participant overlap and protocol equivalence not confirmed','Participant identity overlap unresolved; matching HC protocols documented in the provided files') for r in summary['blocking_reasons']]
     summary['excluded_existing_reports']=excluded
-    summary['teacher_policy_version']=1
+    summary['cohort_policy_version']=1
     summary['quality_note_participants']=[r['participant'] for r in reports if participant_decision(r['participant']).get('quality_review_required')]
     (OUT/'validation_summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')
     summary.update(qc_policy_version=3,participants_with_any_technical_candidate=sum(any(r['status']=='technical_candidate' for r in report['rows']) for report in reports),participants_all_available_rows_candidate=sum(all(r['status']=='technical_candidate' for r in report['rows']) for report in reports),unusable_rows=sum(r['status']=='unusable' for r in rows),native_agreement_failed_rows=sum(r['native_agreement_r'] is None or r['native_agreement_r']<.98 for r in rows))

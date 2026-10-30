@@ -1,7 +1,7 @@
 # Auto FC Pipeline v1
 
 This folder is a Python/MNE draft of the upstream preprocessing steps from
-the reference workflow’s MATLAB Height Control EEG scripts.
+The MATLAB Height Control EEG scripts.
 
 The current purpose is practical:
 
@@ -13,13 +13,13 @@ raw BrainVision EEG
 -> create cleaned/backprojected files for v2
 ```
 
-v1 is not a replacement for lab review. It is a Python version of the workflow
-logic so we can inspect, document, and batch the raw-to-backprojected stage if
+v1 is not a replacement for manual review. It is a Python version of the workflow
+logic for inspecting, documenting, and batching the raw-to-backprojected stage if
 the clean backprojected files cannot be restored.
 
-## What Was Copied From the reference workflow’s Logic
+## Preprocessing steps
 
-the reference workflow’s MATLAB Step 1 does this before and during ICA:
+The MATLAB Step 1 does this before and during ICA:
 
 ```text
 load raw BrainVision .vhdr
@@ -134,7 +134,7 @@ python scripts/01_preprocess_filter.py --config config.local.json
 This script:
 
 1. Reads raw BrainVision files.
-2. Keeps physical channels `1:20,22:64`, matching the reference workflow’s channel-21 skip and
+2. Keeps physical channels `1:20,22:64`, matching the preprocessing channel-21 skip and
    the current suggestion to drop channel 21.
 3. Renames channels using the configured cap map.
 4. Applies the `.sfp` montage.
@@ -158,7 +158,7 @@ PreICA_QC/
 
 Important check:
 
-the reference workflow’s MATLAB code used a fixed `500` samples when creating the short chunks.
+The MATLAB code used a fixed `500` samples when creating the short chunks.
 The raw files currently checked are 1000 Hz, so `500` samples would be 0.5
 seconds for these files. This Python draft uses true 1-second chunks by default:
 
@@ -177,9 +177,9 @@ python scripts/02_detect_bad_channels.py --config config.local.json
 python scripts/03_mark_bad_channels.py --config config.local.json
 ```
 
-These are Python helper scripts using MNE LOF. the reference workflow’s MATLAB workflow mainly
+These are Python helper scripts using MNE LOF. The MATLAB workflow mainly
 relies on EEGLAB rejection and manual review, so treat these as optional QC
-helpers unless the lab wants this exact Python bad-channel route.
+helpers unless the analysis requires this exact Python bad-channel route.
 They write `bad_channels.csv` and `Bad_Channels_Marked/`; the current ICA entry
 point reads `PreICA/`, not `Bad_Channels_Marked/`. These optional helpers are not
 automatically applied to the active cohort and do not interpolate bad channels.
@@ -209,7 +209,7 @@ components with ICLabel probability below `0.8` get `low_confidence_label=True`.
 If `write_review_xlsx` is on, the script also writes an Excel copy with those
 rows highlighted.
 
-If you only need to refresh the review CSV/XLSX and figures from an existing
+To refresh the review CSV/XLSX and figures from an existing
 ICA file, run (only after synchronizing manual XLSX edits to CSV):
 
 ```powershell
@@ -295,7 +295,7 @@ review_exclude3, reviewer3, reviewer3_note
 The important manual step is:
 
 ```text
-Michelle / professor / trained reviewer checks components
+Manual component review
 -> set one review_exclude column to true for bad ICs
 -> synchronize XLSX edits to the matching CSV
 -> run 04_run_ica.py --config config.local.json --backproject-only
@@ -307,7 +307,7 @@ After reviewed exclusions exist, the script applies ICA removal and saves:
 Backprojected/
 ```
 
-This is the Python equivalent of the reference workflow’s `pop_subcomp(... EEG.bad ...)` step.
+This is the Python equivalent of the preprocessing `pop_subcomp(... EEG.bad ...)` step.
 
 The union of explicit TRUE decisions in the three `review_exclude` columns is
 removed. FALSE and blank cells are retained; neither ICLabel nor note text
@@ -323,7 +323,7 @@ python scripts/04_run_ica.py --config config.local.json --apply-auto
 ```
 
 This applies automatic ICLabel suggestions without manual review. Do not use it
-for final analysis unless the lab explicitly approves it.
+for final analysis unless the analysis protocol explicitly permits it.
 
 ## How This Connects To v2
 
@@ -368,7 +368,7 @@ These are the choices currently used in v1:
 - Watch lower-component blocks during review, especially blocks that were forced
   to 10 components.
 - Decide whether the ICLabel 1-100 Hz warning needs any special handling. The
-  current preprocessing follows the reference workflow’s 1-55 Hz setting.
+  current preprocessing uses a 1-55 Hz passband.
 - `404` HC4 v1 review/BP and harmonized v2 are complete; updated downstream QC is still required before scientific inclusion. Do not mix old/new results.
 
 
@@ -376,7 +376,7 @@ These are the choices currently used in v1:
 
 This recording received an additional **manual time-interval review before ICA**, distinct from the later manual IC review. The raw first 64 channels become constant after 190.329 s; the routine automatic annotations did not remove the full failure period. The selected human interval decisions retain 158 s and exclude 431.7 s. BAD annotations preserve original timing; downstream processing must respect them.
 
-ICA was refitted on the retained samples. Audited iteration tracing confirmed the weight-change stop at actual iteration 129 (30 ICs); stored n_iter=500 is not evidence of failed convergence. The 108 s strict alternative is a comparison only. New IC decisions came from the user's completed workbook; explicit reviewer1_note instructions were given priority, with no explicit conflicts found. `other`/`uncertain` notes were not interpreted as automatic rejection. Twenty ICs were removed; ten fitted ICs retained. Existing v1 backprojection also restores residual PCA dimensions, so this is not a claim of rank 10.
+ICA was refitted on the retained samples. Audited iteration tracing confirmed the weight-change stop at actual iteration 129 (30 ICs); stored n_iter=500 is not evidence of failed convergence. The 108 s strict alternative is a comparison only. New IC decisions came from the completed review workbook; explicit reviewer1_note instructions were given priority, with no explicit conflicts found. `other`/`uncertain` notes were not interpreted as automatic rejection. Twenty ICs were removed; ten fitted ICs retained. Existing v1 backprojection also restores residual PCA dimensions, so this is not a claim of rank 10.
 
 The **current production files** are in `outputs/v1_preica_test/`: `PreICA/404_HC4_preica_raw.fif`, `ICA/404_HC4-ica.fif`, `ICA_Figures/404/HC4/`, `ICA_Review/404/`, and `Backprojected/404_HC4_backproject_raw.fif`. HC1-HC3 BP was verified and retained. All four BP files are readable and finite on retained samples. BP completion is not final scientific/QC approval; 404 harmonized v2 is now complete; this does not establish final QC approval.
 

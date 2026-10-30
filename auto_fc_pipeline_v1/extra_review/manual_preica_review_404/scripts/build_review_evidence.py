@@ -1,4 +1,4 @@
-"""Export whole-recording evidence for assistant/human interval review; no fitting."""
+"""Export whole-recording evidence for provisional and manual interval review; no fitting."""
 from pathlib import Path
 import os
 import json

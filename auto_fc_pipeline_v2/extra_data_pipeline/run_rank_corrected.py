@@ -1,4 +1,4 @@
-"""Recompute teacher Clean BP source/FC with explicit rank and residual checks."""
+"""Recompute provided Clean BP source/FC with explicit rank and residual checks."""
 from pathlib import Path
 import csv,json,os,subprocess,sys,time
 ROOT=Path(__file__).resolve().parents[2]
@@ -25,7 +25,7 @@ def main():
     states=json.loads(state_file.read_text()) if state_file.exists() else {}
     for participant in participants:
         if states.get(participant,{}).get('status')=='completed':continue
-        started=time.time();entry={'status':'running','teacher_ica_unchanged':True}
+        started=time.time();entry={'status':'running','provided_ica_unchanged':True}
         states[participant]=entry;state_file.write_text(json.dumps(states,indent=2),encoding='utf-8')
         print(f'{participant}: rank-corrected source/FC',flush=True)
         try:

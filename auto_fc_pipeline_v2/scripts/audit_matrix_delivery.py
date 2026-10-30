@@ -43,9 +43,9 @@ def main():
         'TCP404 reviewed v1 BP has not yet been propagated through v2.',
         'TCP legacy source-rank policy differs from PCD rank-corrected policy.',
         'Five extra-review pilot ICA fits have not produced final BP or replacement FC.',
-        'Existing QC group figures predate the teacher exclusion clarification; do not present as final cohorts.',
-        'Teacher confirmed matching HC protocols; participant identity overlap remains unresolved.',
-        'Teacher requested consistent updated preprocessing; existing Clean BP results are preliminary.',
+        'Existing QC group figures predate the documented exclusion clarification; do not present as final cohorts.',
+        'Documented matching HC protocols; participant identity overlap remains unresolved.',
+        'Planned consistent updated preprocessing; existing Clean BP results are preliminary.',
     ]
     out = ROOT / 'outputs/delivery_audit'
     out.mkdir(exist_ok=True)

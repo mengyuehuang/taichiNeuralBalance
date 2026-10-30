@@ -76,7 +76,7 @@ def read_raw_block(file_path: Path, exclude_channels: list[str], set_average_ref
 def prepare_fsaverage_models(subjects_dir: Path, source_cfg: dict[str, Any]):
     import mne
 
-    # These defaults mirror the old Step_2 scripts and current lab feedback.
+    # These defaults mirror the old Step_2 scripts and current protocol settings.
     subject = str(source_cfg.get("subject", "fsaverage"))
     spacing = str(source_cfg.get("spacing", "ico5"))
     fs_dir = Path(mne.datasets.fetch_fsaverage(subjects_dir=subjects_dir, verbose=True))

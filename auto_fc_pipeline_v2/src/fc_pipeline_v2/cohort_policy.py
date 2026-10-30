@@ -1,4 +1,4 @@
-"""Study-qualified teacher inclusion decisions, separate from numerical QC."""
+"""Study-qualified documented inclusion decisions, separate from numerical QC."""
 from pathlib import Path
 import json
 

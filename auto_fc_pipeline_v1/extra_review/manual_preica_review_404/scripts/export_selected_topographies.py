@@ -28,7 +28,7 @@ def main():
         fig.savefig(path, dpi=150)
         plt.close(fig)
         paths.append(path.name)
-    metadata = {'selected_scheme': 'human_158s', 'selection_basis': 'User selected original interval decisions',
+    metadata = {'selected_scheme': 'human_158s', 'selection_basis': 'Original interval decisions selected',
                 'model': str(model), 'model_sha256': hashlib.sha256(model.read_bytes()).hexdigest(),
                 'termination': status, 'mne_version': mne.__version__, 'files': paths,
                 'component_numbering': 'zero-based, IC00 through IC29',

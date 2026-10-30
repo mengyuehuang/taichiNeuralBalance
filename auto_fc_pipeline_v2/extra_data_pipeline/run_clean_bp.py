@@ -1,4 +1,4 @@
-"""Run existing v2 on teacher Clean BP without reapplying preprocessing or ICA."""
+"""Run existing v2 on provided Clean BP without reapplying preprocessing or ICA."""
 from pathlib import Path
 import argparse,csv,json,os,re,subprocess,sys,time
 ROOT=Path(__file__).resolve().parents[2]
@@ -34,7 +34,7 @@ def main():
         match=re.fullmatch(r'(\d{3})_time_(HC[1-4])(_2)?_backproject',p.stem)
         if not match: raise ValueError(f'Unrecognized input: {p}')
         sid,block,variant=match.groups();participant='PCD'+sid
-        reason='teacher_confirmed_exclude' if is_excluded(participant) else 'ambiguous_duplicate_HC4' if sid=='208' and block=='HC4' else ''
+        reason='documented_exclude' if is_excluded(participant) else 'ambiguous_duplicate_HC4' if sid=='208' and block=='HC4' else ''
         selection.append(dict(participant=participant,block=block,path=str(p),status='hold' if reason else 'selected',reason=reason))
         if not reason: grouped.setdefault(participant,[]).append((block,p))
     with (HOME/'input_manifest.csv').open('w',newline='',encoding='utf-8') as handle:
@@ -47,7 +47,7 @@ def main():
     for participant,records in sorted(grouped.items()):
         if statuses.get(participant,{}).get('status')=='completed':
             print(f'{participant}: already completed; skipping',flush=True);continue
-        started=time.time();entry={'status':'running','blocks':[b for b,p in records],'source':'teacher_clean_bp','started_unix':started}
+        started=time.time();entry={'status':'running','blocks':[b for b,p in records],'source':'provided_clean_bp','started_unix':started}
         statuses[participant]=entry;status_path.write_text(json.dumps(statuses,indent=2),encoding='utf-8')
         print(f'{participant}: preparing {len(records)} Clean BP blocks',flush=True)
         try:
@@ -56,17 +56,17 @@ def main():
                 meta=loadmat(p,simplify_cells=True)['EEG']
                 rank=int(np.asarray(meta['icaweights']).shape[0]);ranks.append(rank)
                 target=inputs/f'{participant}_{block}_backproject_raw.fif'
-                if not target.exists() or mne.io.read_raw_fif(target,preload=False,verbose='ERROR').info.get('description') != 'Teacher Clean BP; lab positional labels; no additional filtering or ICA.':
+                if not target.exists() or mne.io.read_raw_fif(target,preload=False,verbose='ERROR').info.get('description') != 'Provided Clean BP; provided positional labels; no additional filtering or ICA.':
                     raw=mne.io.read_raw_eeglab(p,preload=True,verbose='ERROR')
                     assert raw.n_times==meta['pnts'] and len(raw.ch_names)==meta['nbchan']
                     assert np.isfinite(raw._data).all()
-                    lab=json.loads((ROOT/'auto_fc_pipeline_v1/config.local.json').read_text())
-                    labels=list(lab['channels']['rename_map'].values())
+                    channel_config=json.loads((ROOT/'auto_fc_pipeline_v1/config.local.json').read_text())
+                    labels=list(channel_config['channels']['rename_map'].values())
                     assert len(raw.ch_names)==len(labels)==63
                     # Companion MATLAB analysis code defines the loaded 63-channel order.
                     raw.rename_channels(dict(zip(raw.ch_names,labels)))
-                    raw.set_channel_types({k:v for k,v in lab['channels']['channel_types'].items() if k in raw.ch_names},verbose='ERROR')
-                    raw.info['description']='Teacher Clean BP; lab positional labels; no additional filtering or ICA.'
+                    raw.set_channel_types({k:v for k,v in channel_config['channels']['channel_types'].items() if k in raw.ch_names},verbose='ERROR')
+                    raw.info['description']='Provided Clean BP; provided positional labels; no additional filtering or ICA.'
                     raw.save(target,overwrite=True,verbose='ERROR');raw.close()
             entry['retained_ica_components']=dict(zip(entry['blocks'],ranks))
             # Fewer than 14 retained components cannot support full-rank 14-ROI correction.

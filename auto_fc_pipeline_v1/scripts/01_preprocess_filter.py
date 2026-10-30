@@ -17,7 +17,7 @@ os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(MNE_FAKE_HOME))
 
 from fc_pipeline.config import load_config, resolve_path
 from fc_pipeline.io import drop_configured_channels, find_raw_files, infer_subject_id, read_raw
-from fc_pipeline.montage import apply_lab_montage
+from fc_pipeline.montage import apply_recording_montage
 from fc_pipeline.preica import annotate_noisy_fixed_chunks
 
 
@@ -53,9 +53,9 @@ def main() -> None:
 
         raw = read_raw(raw_file, config["raw"]["file_format"], preload=config["raw"].get("preload", True))
         drop_configured_channels(raw, config["raw"])
-        apply_lab_montage(raw, montage_path, config["channels"])
+        apply_recording_montage(raw, montage_path, config["channels"])
 
-        # The reference workflow filters before ICA. We keep the same default band in config:
+        # Filtering precedes ICA. The configured default band is:
         # 1 Hz high-pass, 55 Hz low-pass, and 60 Hz line-noise removal.
         filtering = config["filtering"]
         raw.filter(l_freq=filtering.get("l_freq"), h_freq=filtering.get("h_freq"))
@@ -67,7 +67,7 @@ def main() -> None:
         raw.save(filtered_path, overwrite=True)
         print(f"Saved filtered raw: {filtered_path}")
 
-        # The reference workflow creates 1-second epochs to find noisy periods before ICA. Here we
+        # One-second windows identify noisy periods before ICA. The implementation will
         # annotate suspicious chunks instead of silently concatenating around
         # deleted pieces, because later FC analysis needs discontinuities handled
         # explicitly.

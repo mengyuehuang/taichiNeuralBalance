@@ -4,7 +4,7 @@ This folder contains the downstream EEG source-connectivity workflow. It begins 
 
 ## TCP/PCD harmonization — 2026-10-30
 
-The corrected PCD numerical implementation is shared with TCP: measured signal rank, removal of tiny storage residuals, rank-aware covariance/inverse estimation, signed source extraction, and the same FC definitions. Study-specific input paths, channel mapping and participant labels remain separate. This does not redo ICA or establish that the upstream preprocessing is identical; the teacher has requested an updated preprocessing protocol whose exact scope still needs confirmation.
+The corrected PCD numerical implementation is shared with TCP: measured signal rank, removal of tiny storage residuals, rank-aware covariance/inverse estimation, signed source extraction, and the same FC definitions. Study-specific input paths, channel mapping and participant labels remain separate. This does not redo ICA or establish that the upstream preprocessing is identical; the planned work includes an updated preprocessing protocol whose exact scope still needs confirmation.
 
 **Completed: all 18 TCP participants, including 404, passed both FC routes (216 matrices per route; zero failed participants).** All 17 existing TCP participants passed input/channel/rank preflight. The isolated batch is [run_tcp_rank_harmonized.py](scripts/run_tcp_rank_harmonized.py), with progress in [run_status.json](outputs/tcp_rank_harmonized/run_status.json) and outputs under [tcp_rank_harmonized](outputs/tcp_rank_harmonized/outputs). TCP404 ran after successful completion and verification of those 17 participants, and is now complete. Old `outputs/corrected` matrices are preserved; do not treat them as newly harmonized outputs. The five extra-review pilot ICA fits have not replaced their production BP inputs.
 
@@ -12,23 +12,23 @@ Compatibility testing identified a mean-handling issue: the rank basis is estima
 
 The completed compatibility audit covers all 34 retained PCD participants / 131 available blocks. Maximum relative projected-input difference is `1.6214e-8`; maximum per-channel mean difference is `2.00585e-5 uV`; maximum pooled empirical covariance relative difference is `6.7863e-9`. No pooled rank changed. These are negligible input-level differences, supporting preservation of historical PCD results pending downstream equivalence verification; they are not an FC recomputation or formal statistical approval. The audit includes annotated samples and does not reproduce the fitted shrunk covariance estimator.
 
-### Teacher decisions and participant identity
+### Cohort decisions and participant identity
 
 The study-qualified [participant policy](extra_data_pipeline/participant_policy.json) records workbook cells and its source hash. Exclude **PCD103, PCD104, PCD107, PCD202 and PCD210** from the current cohort. These decisions do not exclude TCP participants with the same numeric suffix. PCD119, PCD206 and PCD218 have serious quality warnings and remain available for processing/manual review; they are not automatically approved or treated as explicitly excluded. PCD208's ambiguous HC4 remains held. Existing files from excluded participants are retained for provenance, not group analysis.
 
-The effective selected PCD queue contains **34 participants**. The [teacher-cohort QC view](extra_data_pipeline/rank_corrected/qc_validation/teacher_cohort/validation_summary.json) filters historical QC to 34 PCD plus 17 TCP. It still uses historical TCP results and must be refreshed after harmonized results and their QC are complete.
+The effective selected PCD queue contains **34 participants**. The [selected-cohort QC view](extra_data_pipeline/rank_corrected/qc_validation/selected_cohort/validation_summary.json) filters historical QC to 34 PCD plus 17 TCP. It still uses historical TCP results and must be refreshed after harmonized results and their QC are complete.
 
-**Identity is unresolved:** Repeated visit identifiers and cross-study participant-number reuse require confirmation against private lab logs. Preserve study prefixes; do not merge records or assume independence based on numeric IDs. Formal statistics require identity reconciliation. Matching HC protocols have been confirmed, but upstream processing consistency still requires review.
+**Identity is unresolved:** Repeated visit identifiers and cross-study participant-number reuse require confirmation against private collection logs. Preserve study prefixes; do not merge records or assume independence based on numeric IDs. Formal statistics require identity reconciliation. Matching HC protocols have been confirmed, but upstream processing consistency still requires review.
 
 ## Configuration and result versions
 
-`config.hc_corrected.example.json` now enables `rank_policy=data_relative` with tolerance `1e-6`. Its default destination is `outputs/new_rank_corrected_runs`, protecting the completed `outputs/tcp_rank_harmonized/outputs` and historical `outputs/corrected` directories. v1's reviewed BP input remains `../auto_fc_pipeline_v1/outputs/v1_preica_test/Backprojected` relative to this pipeline directory. Set raw/montage paths in your local configurations; generated run configs store absolute paths and are excluded from Git.
+`config.hc_corrected.example.json` now enables `rank_policy=data_relative` with tolerance `1e-6`. Its default destination is `outputs/new_rank_corrected_runs`, protecting the completed `outputs/tcp_rank_harmonized/outputs` and historical `outputs/corrected` directories. v1's reviewed BP input remains `../auto_fc_pipeline_v1/outputs/v1_preica_test/Backprojected` relative to this pipeline directory. Set raw/montage paths in local configurations; generated run configs store absolute paths and are excluded from Git.
 
 Code, tests, templates, example configs and cohort rules belong in Git. Data, references, results, QC reports, images, arrays, logs, run status and generated configs belong in the separate local/Drive archive. Restore local artifacts before using output links in this README. See [repository sharing instructions](../README.md#git-versus-google-drive).
 
 ## Research Design
 
-- Groups: younger adult controls (YAC), older adult controls (OAC), and older adult Tai Chi practitioners (TCOA), using the teacher's confirmed ID lists. Available HC data currently contain 5 YAC, 1 OAC, and 12 TCOA participants; these are not balanced groups.
+- Groups: younger adult controls (YAC), older adult controls (OAC), and older adult Tai Chi practitioners (TCOA), using the documented ID lists. Available HC data currently contain 5 YAC, 1 OAC, and 12 TCOA participants; these are not balanced groups.
 - Recordings: four HC blocks per participant when available.
 - Conditions:
   - `HC1` and `HC4`: non-perturbation.
@@ -67,7 +67,7 @@ v1 owns preprocessing, ICA review, and backprojection. v2 starts from the cleane
 | 14 ROIs | Symmetric orthogonalization | Primary analysis | The number of ROI signals is below the usable EEG rank, so simultaneous correction is mathematically supported. |
 | 100 parcels | Pairwise orthogonalization | Secondary visualization/QC | Cleaned sensor rank for participants 101-103 was 43-52 (relative SVD tolerance 1e-6), below 100. Pairwise correction does not require 100 jointly independent signals. |
 
-The primary 14 ROIs are the seven Schaefer functional networks in each hemisphere. The 100-parcel route is retained because the original study plan requested 100 x 100 matrices, but it must not be described as equivalent to the rank-valid 14-ROI symmetric analysis.
+The primary 14 ROIs are the seven Schaefer functional networks in each hemisphere. The 100-parcel route is retained to generate 100 x 100 matrices, but it must not be described as equivalent to the rank-valid 14-ROI symmetric analysis.
 
 ## Methods
 
@@ -287,9 +287,9 @@ The reference `FC_group_matrices_leakage_corrected.png` is not the same quantity
 
 The October 13 counts below describe legacy TCP outputs, not a newly harmonized cohort. The read-only `scripts/audit_matrix_delivery.py` check currently finds 204 TCP 14-ROI matrices and 204 TCP 100-parcel matrices across 17 participants. PCD rank-corrected outputs contain 396 100-parcel matrices across 35 participants and 39 14-ROI matrices across four participants; 31 participants were skipped by the 14-ROI route for insufficient signal rank. All 843 saved primary-route matrices passed shape, finite-value, symmetry, diagonal and correlation-bound checks. This is numerical validation, not scientific inclusion approval. Audit details: [matrix inventory](outputs/delivery_audit/matrix_inventory.json).
 
-QC v3 finished for 52 participants / 600 block-band rows: 48 technical-candidate rows, 552 requiring review, no native-agreement failures. These are historical QC classifications, not the teacher-approved inclusion list. Existing group figures predate the teacher's exclusion clarification and must not be delivered as final cohorts. The teacher has since confirmed matching TCP/PCD HC protocols; participant identity overlap is still unresolved. Updated preprocessing consistency remains requested.
+QC v3 finished for 52 participants / 600 block-band rows: 48 technical-candidate rows, 552 requiring review, no native-agreement failures. These are historical QC classifications, not the documented inclusion list. Existing group figures predate the updated exclusion policy and must not be delivered as final cohorts. Matching TCP/PCD HC protocols are documented; participant identity overlap is still unresolved. Preprocessing harmonization remains pending.
 
-Remaining work: refresh QC and cohort summaries against the completed harmonized TCP outputs, verify downstream PCD compatibility, and finalize extra-review pilot IC decisions before producing replacement BP/FC. Teacher exclusions have already been applied to a separate historical QC view; identity remains unresolved. The five extra-review ICA pilots do not replace any existing v2 matrices. No new v2 batch was launched by this delivery audit.
+Remaining work: refresh QC and cohort summaries against the completed harmonized TCP outputs, verify downstream PCD compatibility, and finalize extra-review pilot IC decisions before producing replacement BP/FC. Documented exclusions have already been applied to a separate historical QC view; identity remains unresolved. The five extra-review ICA pilots do not replace any existing v2 matrices. No new v2 batch was launched by this delivery audit.
 
 Current PCD outputs: [rank-corrected participant folders](extra_data_pipeline/rank_corrected/outputs). Missing blocks: PCD107 and PCD211 lack HC2-HC4; PCD109 and PCD208 lack HC4. Use these corrected outputs rather than the original extra-data outputs.
 

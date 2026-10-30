@@ -47,7 +47,7 @@ def build_numeric_channel_mapping(
 ) -> dict[str, str]:
     # The sample files arrive as Ch1, Ch2, ..., Ch64 with Ch21 skipped.
     # The old MATLAB code maps those numeric channels to montage labels by
-    # order, so we reproduce that mapping here before setting the montage.
+    # order; that mapping is applied before setting the montage.
     mapping: dict[str, str] = {}
     ordered_raw_names = []
     for name in raw_names:

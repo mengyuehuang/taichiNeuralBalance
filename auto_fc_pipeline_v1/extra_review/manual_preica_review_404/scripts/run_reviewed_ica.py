@@ -1,4 +1,4 @@
-"""Refit only TCP404 HC4 using the user's saved interval decisions."""
+"""Refit only TCP404 HC4 using the saved interval decisions."""
 import os
 os.environ['MNE_USE_NUMBA'] = 'false'
 os.environ['MPLBACKEND'] = 'Agg'

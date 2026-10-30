@@ -82,7 +82,7 @@ def main() -> None:
         raw = mne.io.read_raw_fif(preica_file, preload=True)
         if ica_config.get("set_average_reference_before_ica", False):
             # ICLabel expects common-average referenced EEG. This also follows
-            # the current lab guidance for the Tai Chi preprocessing path.
+            # the current protocol for the Tai Chi preprocessing path.
             raw.set_eeg_reference("average", projection=False)
 
         picks = mne.pick_types(raw.info, eeg=True, eog=False, emg=False, misc=False)
@@ -148,7 +148,7 @@ def main() -> None:
                     "--figures-only, or --reuse-existing-ica. A new ICA fit requires a separate "
                     "output directory and a new review; old component decisions cannot be reused."
                 )
-            # This mirrors the reference workflow’s intent: fit ICA on cleaned preICA data while
+            # This mirrors the preprocessing intent: fit ICA on cleaned preICA data while
             # ignoring chunks annotated as BAD during the 1-second QC step.
             ica = fit_ica_with_retry(raw, picks, ica_config)
 
@@ -187,7 +187,7 @@ def main() -> None:
             continue
 
         # MNE's ICA.apply removes the selected ICs and projects the remaining
-        # components back to channel space, equivalent to the reference workflow’s pop_subcomp step.
+        # components back to channel space, equivalent to the preprocessing pop_subcomp step.
         ica.exclude = exclude
         cleaned = ica.apply(raw.copy())
         cleaned_path = cleaned_dir / f"{subject_id}{config['naming']['cleaned_suffix']}"

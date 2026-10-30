@@ -1,6 +1,6 @@
-"""Validate inverse whitening against the numerical rank of teacher Clean BP.
+"""Validate inverse whitening against the numerical rank of provided Clean BP.
 
-Reuse saved forward/covariance models; never modify teacher data or ICA decisions.
+Reuse saved forward/covariance models; never modify provided files or ICA decisions.
 Write isolated diagnostic results rather than overwrite existing analysis outputs.
 """
 from pathlib import Path
@@ -72,7 +72,7 @@ def main():
             np.savez_compressed(target/f'{path.stem}_{name}_sample.npz',signed_tc14=tc,sfreq=raw.info['sfreq'])
         per['file']=path.name;comparisons.append(per)
         print(json.dumps(per),flush=True)
-    report={'subject':args.subject,'pooled_data_rank':rank,'block_data_ranks':block_ranks,'sample_comparisons':comparisons,'note':'Only diagnostic samples were recomputed. No teacher ICA decisions or existing results changed. Rank-aware source samples are not full FC validation.'}
+    report={'subject':args.subject,'pooled_data_rank':rank,'block_data_ranks':block_ranks,'sample_comparisons':comparisons,'note':'Only diagnostic samples were recomputed. No provided ICA decisions or existing results changed. Rank-aware source samples are not full FC validation.'}
     (target/'rank_validation.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     for raw in raws:raw.close()
 

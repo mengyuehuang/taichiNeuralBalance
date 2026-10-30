@@ -63,7 +63,7 @@ def main() -> None:
     if args.subject.startswith('PCD'):
         from fc_pipeline_v2.cohort_policy import is_excluded
         if is_excluded(args.subject):
-            raise SystemExit(f'{args.subject}: excluded by teacher-confirmed cohort policy; historical outputs preserved.')
+            raise SystemExit(f'{args.subject}: excluded by documented cohort policy; historical outputs preserved.')
     if not re.fullmatch(r'[A-Za-z0-9_-]+', args.subject):
         parser.error('subject must be an ID, not a path or regular expression')
 

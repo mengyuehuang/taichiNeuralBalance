@@ -1,4 +1,4 @@
-"""Audit teacher Clean BP/FC and build explicitly descriptive HC group figures."""
+"""Audit provided Clean BP/FC and build explicitly descriptive HC group figures."""
 from pathlib import Path
 import os
 ROOT=Path(__file__).resolve().parents[2]

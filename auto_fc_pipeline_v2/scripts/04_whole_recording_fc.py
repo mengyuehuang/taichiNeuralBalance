@@ -46,7 +46,7 @@ def main():
     if not files:
         raise FileNotFoundError(f'No corrected signed parcel NPZ inputs in {source}; run step 03')
     settings = cfg.get('corrected_fc', {})
-    # Match the attachment's broadband check without changing the reference workflow’s 1–55 Hz
+    # Compute broadband QC without changing the preprocessing 1–55 Hz
     # upstream filtering. Existing alpha/beta bands remain explicit analyses.
     bands = {'broadband': None, **cfg.get('frequency_bands', {})}
     smoothing_hz = float(settings.get('pairwise_envelope_hz', 8))

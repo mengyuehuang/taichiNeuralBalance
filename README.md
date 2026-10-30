@@ -5,7 +5,7 @@ Python/MNE research workflow. v1 handles preprocessing, ICA review and cleaned c
 - [v1 instructions](auto_fc_pipeline_v1/README.md)
 - [Extra pre-ICA review](auto_fc_pipeline_v1/extra_review/README.md), including the [TCP404 HC4 case](auto_fc_pipeline_v1/extra_review/manual_preica_review_404/README.md)
 - [v2 instructions and identity limitations](auto_fc_pipeline_v2/readme.md)
-- [Teacher PCD Clean BP route](auto_fc_pipeline_v2/extra_data_pipeline/README.md)
+- [PCD Clean BP route](auto_fc_pipeline_v2/extra_data_pipeline/README.md)
 
 ## Features in this update (pending push)
 
@@ -23,20 +23,20 @@ Apply the extra time-interval/channel review to the prioritized suspicious recor
 
 TCP rank harmonization is complete for **18 participants / 72 HC blocks**, including TCP404. Both routes contain **216 matrices** each. Numerical checks passed; updated waveform/stability QC and combined group summaries remain outstanding. Completion is not formal statistical approval.
 
-PCD has 35 historical rank-corrected participant outputs; the teacher-approved inclusion policy leaves **34 selected participants / 131 available blocks** after removing PCD107 from that historical set. Other explicit exclusions were already absent from the computed cohort. PCD119/206/218 remain quality-review cases. Do not count historical excluded files as current eligible results. Identity overlap still requires confirmation.
+PCD has 35 historical rank-corrected participant outputs; the documented inclusion policy leaves **34 selected participants / 131 available blocks** after removing PCD107 from that historical set. Other explicit exclusions were already absent from the computed cohort. PCD119/206/218 remain quality-review cases. Do not count historical excluded files as current eligible results. Identity overlap still requires confirmation.
 
 ## Canonical local paths
 
 | Purpose | Path from repository root |
 | --- | --- |
 | Raw TCP data | `data/TCP_EEG_sync-selected/` |
-| Raw/teacher PCD archive | `data/VRHCT_CleanData-selected/` |
+| Raw/provided PCD archive | `data/VRHCT_CleanData-selected/` |
 | Production v1 reviews, ICA, BP | `auto_fc_pipeline_v1/outputs/v1_preica_test/` |
 | Isolated extra-review experiments | `auto_fc_pipeline_v1/extra_review/outputs/` |
 | TCP404 review evidence and snapshots | `auto_fc_pipeline_v1/extra_review/manual_preica_review_404/outputs/` |
 | Completed harmonized TCP FC | `auto_fc_pipeline_v2/outputs/tcp_rank_harmonized/outputs/<id>/` |
 | Historical PCD rank-corrected FC | `auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/outputs/PCD<id>/` |
-| Filtered historical QC view | `auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/qc_validation/teacher_cohort/` |
+| Filtered historical QC view | `auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/qc_validation/selected_cohort/` |
 | Older TCP FC (historical only) | `auto_fc_pipeline_v2/outputs/corrected/` |
 | New runs using the v2 example config | `auto_fc_pipeline_v2/outputs/new_rank_corrected_runs/` |
 

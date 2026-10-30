@@ -1,12 +1,12 @@
 # TCP404 HC4 manual review
 
-Selected analysis: original human interval decisions, 158 seconds retained. The strict 108-second alternative is retained for comparison only. Both fits reached the weight-change threshold: selected 129 actual iterations; strict 121. Saved n_iter=500 does not mean failure. User IC review and main-v1 HC4 BP were completed on 2026-10-30. v2 has not been rerun.
+Selected analysis: original human interval decisions, 158 seconds retained. The strict 108-second alternative is retained for comparison only. Both fits reached the weight-change threshold: selected 129 actual iterations; strict 121. Saved n_iter=500 does not mean failure. Manual IC review and main-v1 HC4 BP were completed on 2026-10-30. Harmonized v2 processing is complete; updated QC remains pending.
 
 ## Layout
 
 - scripts/: review exporter, evidence generation, ICA fitting/comparison, labeling and topography exporter.
 - src/viewer_template.html: viewer source template.
-- outputs/Manual_Review/: open review.html here; waveform_data and review_evidence must remain alongside it. human_review_decisions.json contains your selected judgments; import it to restore My decision. strict_review_decisions.json is the alternative.
+- outputs/Manual_Review/: open review.html here; waveform_data and review_evidence must remain alongside it. human_review_decisions.json contains the saved interval decisions; import it to restore My decision. strict_review_decisions.json is the alternative.
 - outputs/Selected_158s/: selected v1-style output with PreICA/, ICA/, ICA_Review/404/, ICA_Figures/404/HC4/. Topographies are ica_components_1.png and ica_components_2.png. Component numbering is zero-based IC00-29. Do not reuse old-model IC labels.
 - outputs/Comparisons/termination_comparison_20261029_223545/: both instrumented runs, per-iteration logs, actual stopping reasons, convergence plot and comparison.json. The selected model here reproduces outputs/Selected_158s/ICA/404_HC4-ica.fif exactly.
 - outputs/Comparisons/ica_iteration_audit.json: historical TCP model counters, with their interpretation limitations.

@@ -4,7 +4,7 @@
   "scope": "PCD only; IDs must retain study prefixes",
   "source_workbook": "Local source workbook (not distributed)",
   "source_sha256": "396cbf7792bbdc925dc722a334e8c73c728160c34179944d80d5d17c90bcfe61",
-  "teacher_confirmation": "Teacher reply quoted in chat: exclusion notes apply to current HC; matching TCP/PCD HC protocols; updated preprocessing requested.",
+  "protocol_notes": "Protocol notes: exclusion notes apply to current HC; matching TCP/PCD HC protocols; preprocessing harmonization pending.",
   "participants": {
     "PCD103": {
       "action": "exclude",
@@ -158,7 +158,7 @@
       "action": "retain",
       "basis": "No explicit exclusion; retained for processing, not final QC approval",
       "preprocessing_notes": [],
-      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+      "identity_warning": "Repeated identity identifiers require private record-log confirmation; do not merge or assume independence."
     },
     "PCD102": {
       "action": "retain",
@@ -291,7 +291,7 @@
       "action": "retain",
       "basis": "No explicit exclusion; retained for processing, not final QC approval",
       "preprocessing_notes": [],
-      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+      "identity_warning": "Repeated identity identifiers require private record-log confirmation; do not merge or assume independence."
     },
     "PCD204": {
       "action": "retain",
@@ -369,7 +369,7 @@
       "action": "retain",
       "basis": "No explicit exclusion; retained for processing, not final QC approval",
       "preprocessing_notes": [],
-      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+      "identity_warning": "Repeated identity identifiers require private record-log confirmation; do not merge or assume independence."
     },
     "PCD214": {
       "action": "retain",

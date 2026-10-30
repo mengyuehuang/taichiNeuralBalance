@@ -130,7 +130,7 @@ def main():
     if review_path.exists():
         review = json.loads(review_path.read_text(encoding='utf-8'))
         if review.get('source_sha256') != before:
-            raise ValueError('Assistant review provenance differs from current sources')
+            raise ValueError('Suggestion provenance differs from current sources')
         payload['assistant_review'] = review
     template=(Path(__file__).resolve().parents[1]/'src/viewer_template.html').read_text(encoding='utf-8')
     (OUT/'review.html').write_text(template.replace('/*PAYLOAD*/',json.dumps(payload,separators=(',',':'))),encoding='utf-8')

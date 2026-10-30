@@ -1,4 +1,4 @@
-"""Professor's Step0/0b mathematics adapted to continuous HC blocks."""
+"""Step0/0b mathematics adapted to continuous HC blocks."""
 from itertools import combinations
 import numpy as np
 from scipy.signal import hilbert

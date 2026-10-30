@@ -28,8 +28,8 @@ def infer_hc_label(file_path: Path) -> str:
 
 
 def get_boundary_rows(eeg: Any, *, source_file: Path, subject: str, block: str) -> list[dict[str, Any]]:
-    # Boundary annotations mark possible discontinuities. We report them before
-    # any filtering so we do not accidentally filter across a break in the data.
+    # Boundary annotations mark possible discontinuities. These are reported before
+    # filtering to avoid filtering across a break in the data.
     rows: list[dict[str, Any]] = []
     annotations = getattr(eeg, "annotations", None)
     if annotations is None:
@@ -163,7 +163,7 @@ def main() -> None:
     if any(boundary_rows.values()):
         print(
             "Boundary annotations were found. Do not band-pass filter across those "
-            "points unless the team agrees on the discontinuity handling plan."
+            "points without an explicit discontinuity-handling policy."
         )
 
 

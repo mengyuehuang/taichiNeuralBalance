@@ -72,7 +72,7 @@ tmp/
 Thumbs.db
 desktop.ini
 
-# Local lab documents, electrode metadata and reference exports
+# Local documents, electrode metadata and reference exports
 /*.sfp
 /*.pdf
 /*.docx

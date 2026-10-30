@@ -21,8 +21,8 @@ def annotate_noisy_fixed_chunks(
 ) -> ChunkQcResult:
     """Mark Reference-style 1-second noisy chunks without silently concatenating data.
 
-    the reference workflow’s MATLAB script creates fixed 1-second events so EEGLAB can reject noisy
-    epochs before ICA. In Python we keep the Raw object continuous and add BAD
+    The MATLAB script creates fixed 1-second events so EEGLAB can reject noisy
+    epochs before ICA. The Raw object remains continuous with BAD
     annotations for suspicious chunks. MNE's ICA fitting can then skip those
     annotated spans with reject_by_annotation=True.
     """

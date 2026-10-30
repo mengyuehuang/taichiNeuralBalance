@@ -52,7 +52,7 @@ def export_viewer(dest,subject,raw,pre,names,decisions,hashes,bads):
     payload={'summary':summary,'candidates':decisions,'chunk_samples':chunk,'chunk_count':int(np.ceil(pre.n_times/chunk)),'format':'gzip_float64_le'}
     template=(EXTRA/'manual_preica_review_404/src/viewer_template.html').read_text(encoding='utf-8')
     template=template.replace('TCP404','TCP'+number).replace('HC4',block)
-    template=template.replace('Review only. No data removed, no ICA refitted, no component labels changed. Flags are suggestions, not decisions.', 'Experimental review: the displayed proposed intervals were applied ONLY to this isolated pilot. My decision remains for your independent review. Main v1 is unchanged. Bad channels excluded from reference and ICA: '+(', '.join(bads) or 'none')+'.')
+    template=template.replace('Review only. No data removed, no ICA refitted, no component labels changed. Flags are suggestions, not decisions.', 'Experimental review: the displayed proposed intervals were applied ONLY to this isolated pilot. My decision remains for independent review. Main v1 is unchanged. Bad channels excluded from reference and ICA: '+(', '.join(bads) or 'none')+'.')
     template=template.replace("$('summary').textContent=`Duration:","$('summary').textContent=`Duration:")
     start=template.index("$('summary').textContent=")
     stop=template.index('\n',start)
@@ -78,7 +78,7 @@ def main():
     print('OUTPUT '+str(out),flush=True)
     config=json.loads((V1/'config.local.json').read_text())
     spec=importlib.util.spec_from_file_location('v1_ica',V1/'scripts/04_run_ica.py');runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
-    policy={'scope':'Experimental assistant-proposed screening, not completed human review. No main-v1 changes.','persistent_bad_channel':'Among fully retained 1-second windows: >50% channel PTP >1000 uV AND median channel PTP >10x median of channel medians. Exclude from reference and ICA; no interpolation.','time_intervals':'After removing persistent bad channels: 1-second PTP >1000 uV in any remaining channel OR >=6 remaining channels PTP >500 uV OR >=half channels effectively constant (<1e-5 uV PTP). Add 0.5 s each side; preserve old BAD annotations. Thresholds exploratory, not lab-approved.','ica':'Same extended Infomax/PCA variance policy as v1, seed 97, decim 3. No old IC decisions reused.','automatic_ic_decisions':'Strict prob>0.9: brain include; eye blink, muscle artifact, heart beat, line noise, channel noise exclude; other unresolved. All remaining labels unresolved. Labels computed only on fully retained 2-second epochs; no gap concatenation. 1-55 Hz differs from ICLabel training bandwidth.','not_done':'No final BP, no v2, no main-output promotion. Topographies show the fitted ICA, not a post-rejection refit.'}
+    policy={'scope':'Experimental provisional screening, not completed human review. No main-v1 changes.','persistent_bad_channel':'Among fully retained 1-second windows: >50% channel PTP >1000 uV AND median channel PTP >10x median of channel medians. Exclude from reference and ICA; no interpolation.','time_intervals':'After removing persistent bad channels: 1-second PTP >1000 uV in any remaining channel OR >=6 remaining channels PTP >500 uV OR >=half channels effectively constant (<1e-5 uV PTP). Add 0.5 s each side; preserve old BAD annotations. Thresholds exploratory, not validated.','ica':'Same extended Infomax/PCA variance policy as v1, seed 97, decim 3. No old IC decisions reused.','automatic_ic_decisions':'Strict prob>0.9: brain include; eye blink, muscle artifact, heart beat, line noise, channel noise exclude; other unresolved. All remaining labels unresolved. Labels computed only on fully retained 2-second epochs; no gap concatenation. 1-55 Hz differs from ICLabel training bandwidth.','not_done':'No final BP, no v2, no main-output promotion. Topographies show the fitted ICA, not a post-rejection refit.'}
     (out/'policy.json').write_text(json.dumps(policy,indent=2))
     results=[]
     for subject in CASES:
@@ -101,7 +101,7 @@ def main():
         finalmask=oldmask|proposed
         decisions=[]
         for excluded in [False,True]:
-            for a,b in spans(finalmask==excluded,sf):decisions.append({'start':a,'end':b,'flags':['pilot_proposed_exclude' if excluded else 'pilot_provisional_include'],'assistant_decision':'exclude' if excluded else 'include','decision':'exclude' if excluded else 'include','my_decision':'','reviewer':'Assistant experimental screening','note':'Threshold proposal with 0.5 s padding; original BAD preserved. Review before production use.' if excluded else 'No selected gross-amplitude/flat flag on remaining channels; not a clean-data guarantee.'})
+            for a,b in spans(finalmask==excluded,sf):decisions.append({'start':a,'end':b,'flags':['pilot_proposed_exclude' if excluded else 'pilot_provisional_include'],'assistant_decision':'exclude' if excluded else 'include','decision':'exclude' if excluded else 'include','my_decision':'','reviewer':'Experimental screening','note':'Threshold proposal with 0.5 s padding; original BAD preserved. Review before production use.' if excluded else 'No selected gross-amplitude/flat flag on remaining channels; not a clean-data guarantee.'})
         decisions.sort(key=lambda r:r['start'])
         view=out/'Manual_Review'/subject
         raw=mne.io.read_raw_brainvision(rawpath,verbose=False)
@@ -141,10 +141,10 @@ def main():
             if row['iclabel']=='brain':return 'include'
             return 'exclude' if row['iclabel'].lower() in config['ica']['auto_artifact_labels'] else 'review'
         review['pilot_decision']=review.apply(decision,axis=1)
-        review['pilot_reason']=review.apply(lambda r:'User-authorized prob >0.9 rule; '+r['iclabel'] if r['pilot_decision']!='review' else 'Other category or probability <=0.9: unresolved; human review required',axis=1)
+        review['pilot_reason']=review.apply(lambda r:'Configured prob >0.9 rule; '+r['iclabel'] if r['pilot_decision']!='review' else 'Other category or probability <=0.9: unresolved; human review required',axis=1)
         # Only authorized high-confidence decisions populate reviewer2; human reviewer1 stays blank.
         review['review_exclude2']=review['pilot_decision'].map({'include':False,'exclude':True,'review':''})
-        review['reviewer2']=review['pilot_decision'].map({'include':'Automatic >0.9, user-authorized','exclude':'Automatic >0.9, user-authorized','review':''})
+        review['reviewer2']=review['pilot_decision'].map({'include':'Automatic >0.9, configured rule','exclude':'Automatic >0.9, configured rule','review':''})
         review['reviewer2_note']=review['pilot_reason']
         rp=out/'ICA_Review'/subject.split('_')[0];rp.mkdir(parents=True,exist_ok=True);review.to_csv(rp/f'{subject}_ica_review.csv',index=False)
         last_return=[i for i,e in enumerate(events) if e['event']=='return'];start=last_return[-2]+1 if len(last_return)>1 else 0;ev=events[start:]
