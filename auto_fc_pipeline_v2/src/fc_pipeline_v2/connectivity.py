@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.signal import butter, hilbert, sosfiltfilt
+from scipy.signal import butter, sosfiltfilt
 
 
 def bandpass_filter(
@@ -31,32 +31,43 @@ def trim_edges(parcels_by_time: np.ndarray, sfreq: float, trim_seconds: float) -
     return parcels_by_time[:, trim_samples:-trim_samples]
 
 
-def symmetric_orthogonalize(parcels_by_time: np.ndarray) -> np.ndarray:
-    """Symmetric orthogonalization using the closest orthogonal basis in least squares."""
+def symmetric_orthogonalize(
+    parcels_by_time: np.ndarray,
+    n_iter: int = 50,
+    tol: float = 1e-6,
+) -> np.ndarray:
+    """Colclough symmetric orthogonalization, matching MNE-Connectivity."""
     # Source leakage can make parcels look connected just because nearby source
     # estimates mix together. This step reduces shared zero-lag signal before
     # computing amplitude-envelope correlations.
     demeaned = parcels_by_time - parcels_by_time.mean(axis=1, keepdims=True)
-    u, _, vt = np.linalg.svd(demeaned.T, full_matrices=False)
-    orth = (u @ vt).T
+    singular = np.linalg.svd(demeaned, compute_uv=False)
+    rank = int(np.sum(singular >= singular[0] * 1e-6))
+    if rank < demeaned.shape[0]:
+        raise ValueError("Signal rank is below ROI count; use pairwise correction for 100 parcels")
 
-    original_std = demeaned.std(axis=1, keepdims=True)
-    orth_std = orth.std(axis=1, keepdims=True)
-    orth_std[orth_std == 0] = 1.0
-    return orth * (original_std / orth_std)
-
-
-def amplitude_envelopes(parcels_by_time: np.ndarray) -> np.ndarray:
-    analytic = hilbert(parcels_by_time, axis=1)
-    return np.abs(analytic)
-
-
-def correlation_matrix(parcels_by_time: np.ndarray, apply_absolute_value: bool = False) -> np.ndarray:
-    corr = np.corrcoef(parcels_by_time)
-    if apply_absolute_value:
-        corr = np.abs(corr)
-    np.fill_diagonal(corr, 1.0)
-    return corr
+    # This is the Colclough et al. iterative least-squares algorithm used by
+    # mne_connectivity.envelope.symmetric_orth. Keeping the small calculation
+    # local avoids importing the full connectivity package for every FC run.
+    n_signals = demeaned.shape[0]
+    scales = np.ones(n_signals)
+    last_error = np.inf
+    power = np.linalg.norm(demeaned, "fro") ** 2 or 1.0
+    result = None
+    for _ in range(n_iter):
+        u, _, vh = np.linalg.svd(demeaned.T * scales, full_matrices=False)
+        orthogonal = vh.T @ u.T
+        scales = np.einsum("ij,ij->i", demeaned, orthogonal)
+        orthogonal *= scales[:, np.newaxis]
+        result = orthogonal
+        error = np.linalg.norm(demeaned - result, "fro") ** 2 / power
+        delta = 0.0 if error == 0 else (last_error - error) / error
+        if error == 0 or delta < tol:
+            break
+        last_error = error
+    if result is None:
+        raise RuntimeError("Symmetric orthogonalization did not run")
+    return result
 
 
 def fisher_r_to_z(corr: np.ndarray) -> np.ndarray:
@@ -64,30 +75,3 @@ def fisher_r_to_z(corr: np.ndarray) -> np.ndarray:
     z = np.arctanh(clipped)
     np.fill_diagonal(z, 0.0)
     return z
-
-
-def compute_static_amplitude_connectivity(
-    signed_parcels_by_time: np.ndarray,
-    sfreq: float,
-    band: tuple[float, float],
-    filter_order: int,
-    edge_trim_seconds: float,
-    orthogonalization: str,
-    apply_absolute_value: bool,
-) -> tuple[np.ndarray, np.ndarray]:
-    # For each band: filter signed parcel signals, trim filter edges, reduce
-    # leakage, convert to amplitude envelopes, then correlate parcels.
-    filtered = bandpass_filter(signed_parcels_by_time, sfreq, band[0], band[1], order=filter_order)
-    filtered = trim_edges(filtered, sfreq, edge_trim_seconds)
-
-    if orthogonalization == "symmetric":
-        filtered = symmetric_orthogonalize(filtered)
-    elif orthogonalization in {"none", "off"}:
-        pass
-    else:
-        raise ValueError(f"Unsupported orthogonalization={orthogonalization!r}")
-
-    envelopes = amplitude_envelopes(filtered)
-    r = correlation_matrix(envelopes, apply_absolute_value=apply_absolute_value)
-    z = fisher_r_to_z(r)
-    return r, z

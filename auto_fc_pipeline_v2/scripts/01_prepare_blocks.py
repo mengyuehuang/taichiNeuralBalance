@@ -19,6 +19,7 @@ from fc_pipeline_v2.io import (
     read_backprojected_eeglab_set,
     summarize_mne_object,
 )
+from fc_pipeline_v2.output_paths import ensure_participant_output_paths
 
 
 def infer_hc_label(file_path: Path) -> str:
@@ -72,13 +73,11 @@ def main() -> None:
         )
     )
     parser.add_argument("--config", required=True)
+    parser.add_argument("--subject", help="Optional participant filter, e.g. 101")
     args = parser.parse_args()
 
     config = load_config(args.config)
     input_dir = resolve_path(config, config["paths"]["backprojected_dir"])
-    block_dir = resolve_path(config, config["paths"]["block_data_dir"])
-    block_dir.mkdir(parents=True, exist_ok=True)
-
     files = find_files(input_dir, config["inputs"]["backprojected_glob"])
     if not files:
         raise FileNotFoundError(f"No backprojected files found in {input_dir}")
@@ -87,19 +86,26 @@ def main() -> None:
     export_fif = bool(prep_cfg.get("export_fif", True))
     boundary_policy = str(prep_cfg.get("boundary_policy", "report_only"))
 
-    manifest_rows: list[dict[str, Any]] = []
-    boundary_rows: list[dict[str, Any]] = []
+    manifest_rows: dict[str, list[dict[str, Any]]] = {}
+    boundary_rows: dict[str, list[dict[str, Any]]] = {}
 
     for file_path in files:
         subject = infer_subject_id(file_path, config["naming"]["subject_regex"])
+        if args.subject and subject != args.subject:
+            continue
         block = infer_block_name(file_path, config["naming"]["block_patterns"])
         hc_label = infer_hc_label(file_path)
+        block_dir = ensure_participant_output_paths(config, subject)["blocks"]
         print(f"Reading subject={subject}, block={block}, file={file_path.name}")
 
-        eeg = read_backprojected_eeglab_set(file_path)
+        if config["inputs"].get("backprojected_format") == "mne_raw_fif":
+            import mne
+            eeg = mne.io.read_raw_fif(file_path, preload=True)
+        else:
+            eeg = read_backprojected_eeglab_set(file_path)
         summary = summarize_mne_object(eeg)
         current_boundary_rows = get_boundary_rows(eeg, source_file=file_path, subject=subject, block=block)
-        boundary_rows.extend(current_boundary_rows)
+        boundary_rows.setdefault(subject, []).extend(current_boundary_rows)
 
         # Keep this step format-only: save MNE-readable files, but do not
         # filter, epoch, or source-localize yet.
@@ -118,7 +124,7 @@ def main() -> None:
                 "Set prepare_blocks.boundary_policy to report_only if this is expected."
             )
 
-        manifest_rows.append(
+        manifest_rows.setdefault(subject, []).append(
             {
                 "source_file": str(file_path),
                 "subject": subject,
@@ -141,15 +147,20 @@ def main() -> None:
             f"channels={summary['n_channels']} boundaries={len(current_boundary_rows)}"
         )
 
-    manifest_path = block_dir / "block_manifest.csv"
-    pd.DataFrame(manifest_rows).to_csv(manifest_path, index=False)
+    if not manifest_rows:
+        requested = f" for participant {args.subject}" if args.subject else ""
+        raise FileNotFoundError(f"No matching backprojected files found{requested} in {input_dir}")
 
-    boundary_path = block_dir / "boundary_events.csv"
-    pd.DataFrame(boundary_rows).to_csv(boundary_path, index=False)
+    for subject, rows in manifest_rows.items():
+        block_dir = ensure_participant_output_paths(config, subject)["blocks"]
+        manifest_path = block_dir / "block_manifest.csv"
+        pd.DataFrame(rows).to_csv(manifest_path, index=False)
+        boundary_path = block_dir / "boundary_events.csv"
+        pd.DataFrame(boundary_rows.get(subject, [])).to_csv(boundary_path, index=False)
+        print(f"Manifest saved to {manifest_path}")
+        print(f"Boundary report saved to {boundary_path}")
 
-    print(f"Done. Manifest saved to {manifest_path}")
-    print(f"Boundary report saved to {boundary_path}")
-    if boundary_rows:
+    if any(boundary_rows.values()):
         print(
             "Boundary annotations were found. Do not band-pass filter across those "
             "points unless the team agrees on the discontinuity handling plan."

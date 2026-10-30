@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from fc_pipeline_v2.config import load_config, resolve_path
+from fc_pipeline_v2.output_paths import corrected_output_root, ensure_participant_output_paths
 
 
 def read_fif(file_path: Path) -> Any:
@@ -98,13 +99,11 @@ def main() -> None:
         description="Check whether exported block FIF channel names match the custom .sfp montage."
     )
     parser.add_argument("--config", required=True)
+    parser.add_argument("--subject", help="Optional participant filter, e.g. 101")
     args = parser.parse_args()
 
     config = load_config(args.config)
-    block_dir = resolve_path(config, config["paths"]["block_data_dir"])
     montage_path = resolve_path(config, config["paths"]["montage_path"])
-    report_path = block_dir / "montage_channel_check.csv"
-
     check_cfg = config.get("montage_check", {})
     block_glob = str(check_cfg.get("block_file_glob", "*.fif"))
     ignore_channels = set(check_cfg.get("ignore_channels", []))
@@ -112,88 +111,95 @@ def main() -> None:
     numeric_prefix = str(check_cfg.get("numeric_channel_prefix", "Ch"))
     skipped_numbers = {int(value) for value in check_cfg.get("skip_numeric_channels", [])}
     write_aligned = bool(check_cfg.get("write_montage_aligned_fif", True))
-    aligned_dir = block_dir / str(check_cfg.get("montage_aligned_subdir", "montage_aligned"))
-    if write_aligned:
-        aligned_dir.mkdir(parents=True, exist_ok=True)
 
     import mne
 
     montage = mne.channels.read_custom_montage(montage_path)
     montage_names = list(montage.ch_names)
-    files = sorted(block_dir.glob(block_glob))
-    if not files:
-        raise FileNotFoundError(f"No FIF files found in {block_dir} with pattern {block_glob!r}")
+    root = corrected_output_root(config)
+    subjects = [args.subject] if args.subject else sorted(
+        path.name for path in root.iterdir() if path.is_dir() and not path.name.startswith("_")
+    )
+    found_any = False
+    for subject in subjects:
+        paths = ensure_participant_output_paths(config, subject)
+        block_dir = paths["blocks"]
+        aligned_dir = paths["montage_aligned"]
+        files = sorted(block_dir.glob(block_glob))
+        if not files:
+            continue
+        found_any = True
+        rows: list[dict[str, Any]] = []
+        for file_path in files:
+            eeg = read_fif(file_path)
+            original_names = list(eeg.info["ch_names"])
+            original_comparison = compare_channels(original_names, montage_names, ignore_channels)
 
-    rows: list[dict[str, Any]] = []
-    for file_path in files:
-        eeg = read_fif(file_path)
-        original_names = list(eeg.info["ch_names"])
-        original_comparison = compare_channels(original_names, montage_names, ignore_channels)
+            rename_status = "not_requested"
+            rename_mapping = {}
+            if should_rename_numeric and original_comparison["missing_from_montage"]:
+                rename_mapping = build_numeric_channel_mapping(
+                    original_names,
+                    montage_names,
+                    prefix=numeric_prefix,
+                    skipped_numbers=skipped_numbers,
+                )
+                if rename_mapping:
+                    eeg.rename_channels(rename_mapping)
+                    rename_status = "renamed_from_numeric_order"
+                else:
+                    rename_status = "numeric_mapping_not_available"
 
-        rename_status = "not_requested"
-        rename_mapping = {}
-        if should_rename_numeric and original_comparison["missing_from_montage"]:
-            # If nothing matches the montage, try the known Ch# -> montage-order
-            # conversion before calling this a failed montage.
-            rename_mapping = build_numeric_channel_mapping(
-                original_names,
-                montage_names,
-                prefix=numeric_prefix,
-                skipped_numbers=skipped_numbers,
+            final_names = list(eeg.info["ch_names"])
+            comparison = compare_channels(final_names, montage_names, ignore_channels)
+            status = "ok" if not comparison["missing_from_montage"] else "missing_montage_channels"
+
+            output_file = ""
+            montage_status = "not_set"
+            if not comparison["missing_from_montage"]:
+                eeg.set_montage(montage, match_case=False, on_missing="raise")
+                montage_status = "set"
+                if write_aligned:
+                    suffix = "-epo.fif" if "Epochs" in type(eeg).__name__ else "_raw.fif"
+                    aligned_output_path = aligned_dir / file_path.name.replace(suffix, f"_montage{suffix}")
+                    eeg.save(aligned_output_path, overwrite=True)
+                    output_file = str(aligned_output_path)
+
+            rows.append(
+                {
+                    "file": str(file_path),
+                    "status": status,
+                    "rename_status": rename_status,
+                    "montage_status": montage_status,
+                    "n_data_channels": len(final_names),
+                    "n_montage_channels": len(montage_names),
+                    "n_original_matched": len(original_comparison["matched_channels"]),
+                    "n_original_missing_from_montage": len(original_comparison["missing_from_montage"]),
+                    "n_matched": len(comparison["matched_channels"]),
+                    "n_missing_from_montage": len(comparison["missing_from_montage"]),
+                    "n_extra_in_montage": len(comparison["extra_in_montage"]),
+                    "n_renamed_channels": len(rename_mapping),
+                    "missing_from_montage": ";".join(comparison["missing_from_montage"]),
+                    "extra_in_montage": ";".join(comparison["extra_in_montage"]),
+                    "exported_montage_aligned_file": output_file,
+                }
             )
-            if rename_mapping:
-                eeg.rename_channels(rename_mapping)
-                rename_status = "renamed_from_numeric_order"
-            else:
-                rename_status = "numeric_mapping_not_available"
+            print(
+                f"{file_path.name}: status={status}, rename={rename_status}, "
+                f"matched={len(comparison['matched_channels'])}, "
+                f"missing={len(comparison['missing_from_montage'])}, extra={len(comparison['extra_in_montage'])}"
+            )
 
-        final_names = list(eeg.info["ch_names"])
-        comparison = compare_channels(final_names, montage_names, ignore_channels)
+        report_path = block_dir / "montage_channel_check.csv"
+        write_csv(rows, report_path)
+        print(f"Montage/channel report saved to {report_path}")
+        if any(row['status'] != 'ok' for row in rows):
+            raise RuntimeError(f'{subject}: missing montage channels. See {report_path}; '
+                               'stopping before source localization to avoid reusing stale aligned files.')
 
-        status = "ok"
-        if comparison["missing_from_montage"]:
-            status = "missing_montage_channels"
-
-        output_file = ""
-        montage_status = "not_set"
-        if not comparison["missing_from_montage"]:
-            # Save a clean copy for source localization so downstream scripts do
-            # not need to repeat the channel rename/montage work.
-            eeg.set_montage(montage, match_case=False, on_missing="raise")
-            montage_status = "set"
-            if write_aligned:
-                suffix = "-epo.fif" if "Epochs" in type(eeg).__name__ else "_raw.fif"
-                aligned_output_path = aligned_dir / file_path.name.replace(suffix, f"_montage{suffix}")
-                eeg.save(aligned_output_path, overwrite=True)
-                output_file = str(aligned_output_path)
-
-        rows.append(
-            {
-                "file": str(file_path),
-                "status": status,
-                "rename_status": rename_status,
-                "montage_status": montage_status,
-                "n_data_channels": len(final_names),
-                "n_montage_channels": len(montage_names),
-                "n_original_matched": len(original_comparison["matched_channels"]),
-                "n_original_missing_from_montage": len(original_comparison["missing_from_montage"]),
-                "n_matched": len(comparison["matched_channels"]),
-                "n_missing_from_montage": len(comparison["missing_from_montage"]),
-                "n_extra_in_montage": len(comparison["extra_in_montage"]),
-                "n_renamed_channels": len(rename_mapping),
-                "missing_from_montage": ";".join(comparison["missing_from_montage"]),
-                "extra_in_montage": ";".join(comparison["extra_in_montage"]),
-                "exported_montage_aligned_file": output_file,
-            }
-        )
-        print(
-            f"{file_path.name}: status={status}, rename={rename_status}, "
-            f"matched={len(comparison['matched_channels'])}, "
-            f"missing={len(comparison['missing_from_montage'])}, extra={len(comparison['extra_in_montage'])}"
-        )
-
-    write_csv(rows, report_path)
-    print(f"Done. Montage/channel report saved to {report_path}")
+    if not found_any:
+        requested = f" for participant {args.subject}" if args.subject else ""
+        raise FileNotFoundError(f"No block-level FIF files found{requested} under {root}")
 
 
 if __name__ == "__main__":

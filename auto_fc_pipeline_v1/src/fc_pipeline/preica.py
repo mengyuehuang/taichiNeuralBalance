@@ -19,9 +19,9 @@ def annotate_noisy_fixed_chunks(
     raw: mne.io.BaseRaw,
     qc_config: dict[str, Any],
 ) -> ChunkQcResult:
-    """Mark Yang-style 1-second noisy chunks without silently concatenating data.
+    """Mark Reference-style 1-second noisy chunks without silently concatenating data.
 
-    Yang's MATLAB script creates fixed 1-second events so EEGLAB can reject noisy
+    the reference workflow’s MATLAB script creates fixed 1-second events so EEGLAB can reject noisy
     epochs before ICA. In Python we keep the Raw object continuous and add BAD
     annotations for suspicious chunks. MNE's ICA fitting can then skip those
     annotated spans with reject_by_annotation=True.

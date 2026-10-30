@@ -4,9 +4,7 @@ numpy
 pandas
 scipy
 scikit-learn
-nilearn
-mne-connectivity
-hmmlearn
 numba
 openpyxl
+matplotlib
 

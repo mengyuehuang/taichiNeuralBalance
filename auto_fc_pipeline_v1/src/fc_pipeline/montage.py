@@ -7,7 +7,7 @@ import mne
 import numpy as np
 
 
-def apply_hernandez_montage(
+def apply_lab_montage(
     raw: mne.io.BaseRaw,
     montage_path: Path,
     channel_config: dict[str, Any],

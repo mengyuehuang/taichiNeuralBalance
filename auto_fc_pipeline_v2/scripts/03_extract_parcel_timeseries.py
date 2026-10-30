@@ -1,10 +1,10 @@
-"""Placeholder for Schaefer parcel time-series extraction.
+"""Extract signed 100-parcel and 14-ROI signals using bounded inverse chunks."""
+import runpy
+import sys
+from pathlib import Path
 
-Required behavior:
-- extract signed parcel time series
-- target 100 Schaefer parcels
-- drop medial-wall labels if present in the source-label output
-"""
-
-raise SystemExit("TODO: implement after source localization outputs are confirmed.")
-
+if __name__ == "__main__":
+    if "--include-parcels" not in sys.argv:
+        sys.argv.append("--include-parcels")
+    runpy.run_path(str(Path(__file__).with_name("03_extract_14roi_timeseries.py")),
+                  run_name="__main__")

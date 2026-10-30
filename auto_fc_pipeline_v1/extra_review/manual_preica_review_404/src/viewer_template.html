@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>TCP404 HC4 — Pre-ICA manual review</title>
+<style>body{font:15px system-ui;margin:24px;background:#f5f7fa;color:#182234}h1{font-size:25px}button,input,select{padding:7px;margin:4px}section{background:white;padding:14px;margin:14px 0;border:1px solid #ccd5df;border-radius:8px}canvas{width:100%;display:block}table{border-collapse:collapse;width:100%}td,th{padding:7px;border-bottom:1px solid #ddd;text-align:left}.warning{color:#9b3516}label{white-space:nowrap}.controls{position:sticky;top:0;background:#eef3f9;z-index:2;padding:8px}</style>
+<h1>TCP404 HC4 — Pre-ICA manual review</h1>
+<p class="warning">Review only. No data removed, no ICA refitted, no component labels changed. Flags are suggestions, not decisions.</p>
+<p id="summary"></p><p id="reviewStatus" class="warning"></p><p>Time is seconds from recording start. Gray bands = existing BAD annotations. Continuous lines connect every actual sample at 1000 Hz. No time binning, decimation or additional filtering. Out-of-range traces are clipped at row borders, never flattened to the border. Zoom to 1–2 seconds to inspect oscillations.</p>
+<div class="controls"><label>Signal <select id="signal"><option value="pre">Saved PreICA (filtered, before average reference)</option><option value="raw">Original raw</option></select></label>
+<label>Start (s) <input id="start" type="number" min="0" value="0" step="1" style="width:85px"></label>
+<label>End (s) <input id="end" type="number" min="0.001" step="any" value="10" style="width:85px" title="End time in seconds; display up to 60 seconds at a time"></label>
+<button id="prev">Previous</button><button id="next">Next</button><button id="draw">Show</button>
+<label>Scale <input id="scale" type="number" min="0.001" step="any" value="100" style="width:105px"> µV (±)</label>
+<label><input type="checkbox" id="autoScale">Per-channel auto</label>
+<label><input type="checkbox" id="center" checked>Subtract each channel's visible-window midpoint</label></div>
+<p id="range"></p><section><canvas id="plot"></canvas></section>
+<section><h2>Manual interval decisions</h2><p>Assistant suggestions are preloaded when available. The Assistant column preserves the original recommendation; the existing Decision column remains unchanged. Record your independent judgment in the final My decision column (blank until you choose). Inspect the entire recording, including unflagged intervals. Add arbitrary intervals below. Decisions remain in this browser until downloaded; re-import the downloaded JSON to resume. Include, exclude and uncertain are human judgments. Include = retain this interval; exclude = omit this interval from future ICA fitting. No decision is applied to EEG by this tool.</p>
+<label>Start <input id="from" type="number" step=".001" style="width:100px"></label><label>End <input id="to" type="number" step=".001" style="width:100px"></label><button id="add">Add interval</button>
+<button id="download">Download review decisions JSON</button><label>Resume review <input id="import" type="file" accept=".json"></label>
+<table><thead><tr><th>Interval (s)</th><th>Flag / reason</th><th>Assistant</th><th>Decision</th><th>Reviewer</th><th>Note</th><th>My decision</th></tr></thead><tbody id="rows"></tbody></table></section>
+<script>
+const D=/*PAYLOAD*/;
+const $=s=>document.getElementById(s);let rows=(D.assistant_review?.intervals||D.candidates).map(x=>({...x}));
+ if(D.assistant_review){
+  if(JSON.stringify(D.assistant_review.source_sha256)!==JSON.stringify(D.summary.source_sha256))throw Error('Assistant review provenance mismatch');
+  $('reviewStatus').textContent='Assistant suggestions loaded for the entire recording. Include = provisional ICA input; exclude = proposed removal; uncertain = unresolved. No human approval and no decisions applied. Modify after your own review, then download.';
+ }
+$('summary').textContent=`Duration: ${D.summary.duration_seconds} s. ICA input channels: ${D.summary.channels.length}. Exact constant tail in first 64 recorded channels: ${D.summary.all_first64_constant_tail_start}–${D.summary.duration_seconds} s.`;
+const cache=new Map(),pending=new Map();let drawGeneration=0;
+window.registerWaveformChunk=async function(idx,encoded){
+ try{
+  const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  const buffer=await new Response(stream).arrayBuffer();
+  const n=Math.min(D.chunk_samples,D.summary.samples-idx*D.chunk_samples);
+  if(buffer.byteLength!==2*D.summary.channels.length*n*8)throw Error('Waveform chunk size mismatch');
+  const block={values:new Float64Array(buffer),n};cache.set(idx,block);
+  pending.get(idx).resolve(block);pending.delete(idx);
+ }catch(error){pending.get(idx)?.reject(error);pending.delete(idx)}
+};
+function loadChunk(idx){
+ if(cache.has(idx))return Promise.resolve(cache.get(idx));
+ if(pending.has(idx))return pending.get(idx).promise;
+ let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});pending.set(idx,{promise,resolve,reject});
+ const script=document.createElement('script');script.src='waveform_data/chunk_'+String(idx).padStart(3,'0')+'.js';
+ script.onload=()=>script.remove();script.onerror=()=>{pending.delete(idx);script.remove();reject(Error('Cannot load waveform_data. Keep that folder beside review.html.'))};document.head.append(script);return promise;
+}
+async function draw(){
+ const generation=++drawGeneration;
+ const start=Number($('start').value),end=Number($('end').value),scaleValue=Number($('scale').value);
+ $('scale').disabled=$('autoScale').checked;
+ if($('start').value.trim()===''||$('end').value.trim()===''||!Number.isFinite(start)||!Number.isFinite(end)||start<0||end>D.summary.duration_seconds||end-start<.001||end-start>60){$('range').textContent=`Enter Start and End within 0–${D.summary.duration_seconds} s, with End greater than Start and a span of 0.001–60 s. Plot below still shows the previous valid interval.`;return}
+ if(!$('autoScale').checked&&(!Number.isFinite(scaleValue)||scaleValue<.001)){$('range').textContent='Enter a positive scale of at least 0.001 µV.';return}
+ const sf=D.summary.sfreq,a=Math.ceil(start*sf),b=Math.min(Math.ceil(end*sf),D.summary.samples);
+ const first=Math.floor(a/D.chunk_samples),last=Math.floor((b-1)/D.chunk_samples);
+ $('range').textContent='Loading actual samples...';
+ try{
+  const blocks=await Promise.all(Array.from({length:last-first+1},(_,j)=>loadChunk(first+j)));
+  if(generation!==drawGeneration)return;
+  for(const key of cache.keys())if(key<first||key>last)cache.delete(key);
+  const mode=$('signal').value==='raw'?0:1,nch=D.summary.channels.length;
+  function eachSample(k,visit){blocks.forEach((block,j)=>{const origin=(first+j)*D.chunk_samples,lo=Math.max(a-origin,0),hi=Math.min(b-origin,block.n),offset=(mode*nch+k)*block.n;for(let t=lo;t<hi;t++)visit(origin+t,block.values[offset+t])})}
+  const c=$('plot'),w=Math.max(900,c.clientWidth),rowH=60;c.width=w;c.height=40+nch*rowH;
+  const g=c.getContext('2d'),left=145,right=w-20;g.fillStyle='white';g.fillRect(0,0,w,c.height);g.font='12px system-ui';
+  const step=end-start<=2?.2:end-start<=10?1:5;
+  for(let t=Math.ceil(start/step)*step;t<=end;t+=step){const xx=left+(t-start)/(end-start)*(right-left);g.strokeStyle='#edf0f4';g.beginPath();g.moveTo(xx,28);g.lineTo(xx,c.height);g.stroke();g.fillStyle='#444';g.fillText(t.toFixed(1),xx,16)}
+  for(const span of D.summary.original_bad_intervals){const lo=Math.max(start,span.start),hi=Math.min(end,span.end);if(hi>lo){g.fillStyle='#bbb9';g.fillRect(left+(lo-start)/(end-start)*(right-left),28,(hi-lo)/(end-start)*(right-left),c.height)}}
+  // Decision-colored strip above the waveform; original BAD shading remains gray.
+  for(const r of rows){const lo=Math.max(start,r.start),hi=Math.min(end,r.end);if(hi>lo){g.fillStyle={include:'#52a477',exclude:'#df6969',uncertain:'#e0b444'}[r.decision]||'#aaa';g.fillRect(left+(lo-start)/(end-start)*(right-left),24,(hi-lo)/(end-start)*(right-left),5)}}
+  let clipped=0;
+  D.summary.channels.forEach((name,k)=>{
+   let lo=Infinity,hi=-Infinity;eachSample(k,(_,v)=>{lo=Math.min(lo,v);hi=Math.max(hi,v)});
+   const center=$('center').checked?(lo+hi)/2:0,scale=$('autoScale').checked?Math.max(Math.abs(lo-center),Math.abs(hi-center),.01):+$('scale').value,yy=55+k*rowH;
+   g.fillStyle='#25354b';g.fillText(name,3,yy);g.fillText('±'+scale.toPrecision(3),45,yy);
+   g.strokeStyle='#ddd';g.beginPath();g.moveTo(left,yy);g.lineTo(right,yy);g.stroke();
+   g.save();g.beginPath();g.rect(left,yy-23,right-left,46);g.clip();g.strokeStyle='#204e82';g.lineWidth=1;g.beginPath();let began=false,rowClipped=false;
+   eachSample(k,(sample,v)=>{const ratio=(v-center)/scale,xx=left+(sample/sf-start)/(end-start)*(right-left),py=yy-ratio*23;if(Math.abs(ratio)>1){clipped++;rowClipped=true}if(!began){g.moveTo(xx,py);began=true}else g.lineTo(xx,py)});
+   g.stroke();g.restore();
+   if(rowClipped){g.fillStyle='#b33320';g.fillText('OUT OF SCALE — increase scale',left+6,yy-25)}
+   else if(hi===lo){g.fillStyle='#204e82';g.fillText('Constant actual samples',left+6,yy-25)}
+  });
+  $('range').textContent=`Updated #${generation} | ${$('signal').value==='raw'?'Original raw':'Saved PreICA'} | Scale: ${$('autoScale').checked?'per-channel auto':'±'+scaleValue+' µV'} | Viewing ${start.toFixed(3)}–${end.toFixed(3)} s at ${sf} Hz; all ${b-a} samples/channel drawn. ${clipped?clipped+' samples outside scale; increase scale or use auto.':'No display clipping.'} Auto scaling cannot compare amplitudes across channels.`;
+  $('from').value=start;$('to').value=end;
+ }catch(error){if(generation===drawGeneration)$('range').textContent='Display error: '+error.message}
+}
+function table(){let body=$('rows');body.replaceChildren();rows.forEach(r=>{let tr=document.createElement('tr'),cell=document.createElement('td'),btn=document.createElement('button');btn.textContent=r.start+'–'+r.end;btn.onclick=()=>{$('start').value=Math.max(0,r.start-2);$('end').value=Math.min(D.summary.duration_seconds,Number($('start').value)+60,r.end+2);draw();window.scrollTo(0,0)};cell.append(btn);tr.append(cell);cell=document.createElement('td');cell.textContent=(r.flags||[]).join('; ');for(const path of r.evidence||[]){if(!/^review_evidence\/[a-zA-Z0-9_.-]+$/.test(path))continue;const link=document.createElement('a');link.href=path;link.textContent=' Evidence';link.target='_blank';cell.append(link)}tr.append(cell);cell=document.createElement('td');cell.textContent=r.assistant_decision||'';cell.title=r.assistant_note||'';tr.append(cell);cell=document.createElement('td');let sel=document.createElement('select');['','include','exclude','uncertain'].forEach(v=>{let op=document.createElement('option');op.value=v;op.textContent=v||'Not reviewed';sel.append(op)});sel.value=r.decision||'';sel.onchange=()=>{r.decision=sel.value;draw()};cell.append(sel);tr.append(cell);['reviewer','note'].forEach(key=>{let td=document.createElement('td'),inp=document.createElement(key==='note'?'textarea':'input');if(key==='note'){inp.rows=4;inp.style.width='320px'}inp.value=r[key]||'';inp.oninput=()=>r[key]=inp.value;td.append(inp);tr.append(td)});const mineCell=document.createElement('td'),mine=document.createElement('select');['','include','exclude','uncertain'].forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value||'Not reviewed';mine.append(option)});mine.dataset.reviewField='my_decision';mine.value=r.my_decision||'';mine.onchange=()=>{r.my_decision=mine.value};mineCell.append(mine);tr.append(mineCell);body.append(tr)})}
+$('add').onclick=()=>{let start=+$('from').value,end=+$('to').value;if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||end>D.summary.duration_seconds){alert('Enter a valid interval within this recording.');return}rows.push({start,end,flags:['manually_added'],decision:'',reviewer:'',note:''});table()};
+$('download').onclick=()=>{const selections=$('rows').querySelectorAll('select[data-review-field="my_decision"]');if(selections.length!==rows.length){alert('Decision table mismatch. Export stopped to avoid losing your decisions.');return}selections.forEach((select,index)=>{rows[index].my_decision=select.value});let blob=new Blob([JSON.stringify({subject:'TCP404',block:'HC4',source_sha256:D.summary.source_sha256,decisions_applied:false,viewer_export_version:2,intervals:rows},null,2)],{type:'application/json'});let link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='TCP404_HC4_manual_decisions.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)};
+$('import').onchange=async e=>{try{let obj=JSON.parse(await e.target.files[0].text());if(obj.subject!=='TCP404'||obj.block!=='HC4'||JSON.stringify(obj.source_sha256)!==JSON.stringify(D.summary.source_sha256)||!Array.isArray(obj.intervals))throw Error('Recording provenance mismatch');for(let r of obj.intervals){if(r.decision==='reject')r.decision='exclude';else if(r.decision==='keep')r.decision='include'}for(let r of obj.intervals)if(!Number.isFinite(r.start)||!Number.isFinite(r.end)||r.start<0||r.end<=r.start||r.end>D.summary.duration_seconds||!['','include','exclude','uncertain'].includes(r.decision))throw Error('Invalid interval or decision');for(const r of obj.intervals){if(!['','include','exclude','uncertain'].includes(r.my_decision||''))throw Error('Invalid My decision')}rows=obj.intervals;$('reviewStatus').textContent='Imported review decisions loaded. Changes are not applied to EEG; download to save.';table();draw()}catch(err){alert(err.message)}};
+function shiftInterval(direction){const start=Number($('start').value),end=Number($('end').value),span=end-start;if(!Number.isFinite(span)||span<.001||span>60||start<0||end>D.summary.duration_seconds){draw();return}const nextStart=Math.max(0,Math.min(start+direction*span,D.summary.duration_seconds-span));$('start').value=Number(nextStart.toFixed(6));$('end').value=Number((nextStart+span).toFixed(6));draw()}
+let inputTimer;
+ function scheduleDraw(){clearTimeout(inputTimer);inputTimer=setTimeout(draw,250)}
+ ['start','end','scale'].forEach(id=>{$(id).addEventListener('input',scheduleDraw);$(id).addEventListener('change',draw)});
+ ['signal','autoScale','center'].forEach(id=>$(id).onchange=draw);$('draw').onclick=draw;$('prev').onclick=()=>shiftInterval(-1);$('next').onclick=()=>shiftInterval(1);['start','end','scale'].forEach(id=>$(id).addEventListener('keydown',event=>{if(event.key==='Enter')draw()}));window.onresize=draw;table();draw();
+</script></html>

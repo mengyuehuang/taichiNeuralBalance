@@ -6,4 +6,6 @@ scipy
 scikit-learn
 nilearn
 mne-connectivity
+nibabel
 openpyxl
+matplotlib

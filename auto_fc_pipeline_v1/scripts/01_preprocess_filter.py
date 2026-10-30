@@ -17,13 +17,13 @@ os.environ.setdefault("_MNE_FAKE_HOME_DIR", str(MNE_FAKE_HOME))
 
 from fc_pipeline.config import load_config, resolve_path
 from fc_pipeline.io import drop_configured_channels, find_raw_files, infer_subject_id, read_raw
-from fc_pipeline.montage import apply_hernandez_montage
+from fc_pipeline.montage import apply_lab_montage
 from fc_pipeline.preica import annotate_noisy_fixed_chunks
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Yang-inspired pre-ICA preprocessing: load raw EEG, montage, filter, mark noisy 1-sec chunks."
+        description="Reference-based pre-ICA preprocessing: load raw EEG, montage, filter, mark noisy 1-sec chunks."
     )
     parser.add_argument("--config", required=True, help="Path to config JSON.")
     args = parser.parse_args()
@@ -46,13 +46,16 @@ def main() -> None:
 
     for raw_file in raw_files:
         subject_id = infer_subject_id(raw_file, config["naming"]["subject_regex"])
+        if (output_root / 'ICA' / f'{subject_id}-ica.fif').exists():
+            raise RuntimeError(f'{subject_id} already has an ICA model. Use a new output directory '
+                               'for changed preprocessing, then refit and review ICA there.')
         print(f"\nProcessing {subject_id}: {raw_file}")
 
         raw = read_raw(raw_file, config["raw"]["file_format"], preload=config["raw"].get("preload", True))
         drop_configured_channels(raw, config["raw"])
-        apply_hernandez_montage(raw, montage_path, config["channels"])
+        apply_lab_montage(raw, montage_path, config["channels"])
 
-        # Yang filters before ICA. We keep the same default band in config:
+        # The reference workflow filters before ICA. We keep the same default band in config:
         # 1 Hz high-pass, 55 Hz low-pass, and 60 Hz line-noise removal.
         filtering = config["filtering"]
         raw.filter(l_freq=filtering.get("l_freq"), h_freq=filtering.get("h_freq"))
@@ -64,7 +67,7 @@ def main() -> None:
         raw.save(filtered_path, overwrite=True)
         print(f"Saved filtered raw: {filtered_path}")
 
-        # Yang creates 1-second epochs to find noisy periods before ICA. Here we
+        # The reference workflow creates 1-second epochs to find noisy periods before ICA. Here we
         # annotate suspicious chunks instead of silently concatenating around
         # deleted pieces, because later FC analysis needs discontinuities handled
         # explicitly.

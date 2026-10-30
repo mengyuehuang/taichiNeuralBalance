@@ -1,18 +1,16 @@
 {
   "paths": {
     "raw_data_dir": "TODO/set/path/to/raw_data",
-    "event_list_dir": "TODO/set/path/to/EventLists",
     "output_dir": "TODO/set/path/to/FC_outputs",
     "montage_path": "TODO/set/path/to/MFPRL_UPDATED_V2.sfp"
   },
   "raw": {
     "file_format": "brainvision",
-    "file_glob": "*.vhdr",
+    "file_glob": "**/*_HC*.vhdr",
     "preload": true,
     "load_channel_indices_1based": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64],
     "drop_last_n_channels": 0,
-    "drop_channels": [],
-    "confirm_channel_21_is_ground": true
+    "drop_channels": []
   },
   "filtering": {
     "l_freq": 1.0,
@@ -22,11 +20,9 @@
   "preica_qc": {
     "enabled": true,
     "chunk_length_seconds": 1.0,
-    "marker_spacing": "sfreq",
     "zscore_threshold": 6.0,
     "reject_channel_names": [],
     "reject_channel_indices_1based_after_loading": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
-    "manual_review_required": true,
     "annotation_description": "BAD_preICA_auto"
   },
   "ica": {
@@ -46,7 +42,6 @@
     "flag_low_confidence_labels": true,
     "low_confidence_probability_threshold": 0.8,
     "write_review_xlsx": true,
-    "manual_review_required": true,
     "apply_without_review": false
   },
   "naming": {
@@ -54,18 +49,6 @@
     "filtered_suffix": "_filtered_raw.fif",
     "preica_suffix": "_preica_raw.fif",
     "cleaned_suffix": "_backproject_raw.fif"
-  },
-  "events": {
-    "event_file_suffix": "_EL.txt",
-    "event_id": {
-      "congruent_left": 14,
-      "congruent_right": 26,
-      "incongruent_left": 116,
-      "incongruent_right": 128
-    },
-    "tmin": -0.2,
-    "tmax": 1.2,
-    "zscore_threshold": 6.0
   },
   "channels": {
     "rename_map": {

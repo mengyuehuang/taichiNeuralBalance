@@ -4,8 +4,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 
 def find_files(folder: Path, pattern: str) -> list[Path]:
     return sorted(folder.glob(pattern))
@@ -64,30 +62,3 @@ def infer_block_name(file_path: Path, block_patterns: dict[str, list[str]]) -> s
 def infer_hc_label(file_path: Path) -> str:
     match = re.search(r"HC\d+", file_path.stem, flags=re.IGNORECASE)
     return match.group(0).upper() if match else ""
-
-
-def load_parcel_timeseries(file_path: Path, timeseries_config: dict[str, Any]) -> np.ndarray:
-    data = np.load(file_path)
-    if data.ndim != 2:
-        raise ValueError(f"Expected a 2D parcel time-series array, got shape {data.shape} from {file_path}")
-
-    orientation = timeseries_config.get("orientation", "parcels_by_time")
-    if orientation == "parcels_by_time":
-        parcels_by_time = data
-    elif orientation == "time_by_parcels":
-        parcels_by_time = data.T
-    else:
-        raise ValueError(f"Unsupported timeseries.orientation={orientation!r}")
-
-    drop_last_n = int(timeseries_config.get("drop_last_n_labels") or 0)
-    if drop_last_n > 0:
-        parcels_by_time = parcels_by_time[:-drop_last_n, :]
-
-    expected = timeseries_config.get("expected_n_parcels")
-    if expected is not None and parcels_by_time.shape[0] != int(expected):
-        raise ValueError(
-            f"Expected {expected} parcels after medial-wall handling, "
-            f"got {parcels_by_time.shape[0]} for {file_path.name}"
-        )
-
-    return parcels_by_time.astype(float, copy=False)

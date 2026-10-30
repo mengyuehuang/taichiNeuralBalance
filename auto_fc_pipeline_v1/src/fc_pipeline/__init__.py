@@ -1,2 +1,2 @@
-"""Utilities for the draft Hernandez-lab FC preprocessing pipeline."""
+"""Utilities for the draft lab FC preprocessing pipeline."""
 

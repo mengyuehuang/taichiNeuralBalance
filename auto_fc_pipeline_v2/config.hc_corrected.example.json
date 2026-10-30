@@ -1,0 +1,182 @@
+{
+  "paths": {
+    "backprojected_dir": "auto_fc_pipeline_v1/outputs/v1_preica_test/Backprojected",
+    "corrected_output_root": "auto_fc_pipeline_v2/outputs/new_rank_corrected_runs",
+    "montage_path": "references/montage/MFPRL_UPDATED_V2.sfp",
+    "subjects_dir": "auto_fc_pipeline_v2/outputs/subjects"
+  },
+  "inputs": {
+    "backprojected_format": "mne_raw_fif",
+    "backprojected_glob": "*_backproject_raw.fif"
+  },
+  "prepare_blocks": {
+    "export_fif": true,
+    "boundary_policy": "report_only"
+  },
+  "montage_check": {
+    "block_file_glob": "*.fif",
+    "ignore_channels": [
+      "GND"
+    ],
+    "rename_numeric_channels_from_montage_order": true,
+    "numeric_channel_prefix": "Ch",
+    "skip_numeric_channels": [
+      21
+    ],
+    "write_montage_aligned_fif": true
+  },
+  "source_localization": {
+    "input_glob": "*_montage_raw.fif",
+    "exclude_channels": [
+      "GND",
+      "LHEye",
+      "RHEye",
+      "RVEye",
+      "Lneck",
+      "Rneck"
+    ],
+    "method": "eLORETA",
+    "subject": "fsaverage",
+    "trans": "fsaverage",
+    "spacing": "ico5",
+    "bem_name": "fsaverage-5120-5120-5120-bem-sol.fif",
+    "snr": 3.0,
+    "loose": 0.2,
+    "depth": 0.8,
+    "mindist": 5.0,
+    "covariance_method": [
+      "shrunk",
+      "empirical"
+    ],
+    "set_average_reference_projection": true,
+    "one_inverse_operator_per_participant": true,
+    "separate_inverse_by_frequency_band": false,
+    "requires_colab_or_cluster": false,
+    "pick_ori": "normal",
+    "rank_policy": "data_relative",
+    "rank_relative_tolerance": 1e-06
+  },
+  "parcel_extraction": {
+    "atlas": "Schaefer2018",
+    "target_n_parcels": 100,
+    "drop_medial_wall_labels_if_present": true,
+    "output_signed_timeseries": true,
+    "parc": "Schaefer2018_100Parcels_7Networks_order",
+    "mode": "mean_flip"
+  },
+  "upstream_preprocessing": {
+    "matlab_reference_folder": "../references/MatLab analysis code",
+    "step1_script": "Step1_Run_EEG_HC_2021_YH.m",
+    "step2_batch_scripts": [
+      "2. Run_EEG_HC1_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC2_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC3_CleanTimeData_Bunch_YH.m",
+      "2. Run_EEG_HC4_CleanTimeData_Bunch_YH.m"
+    ],
+    "reported_filter_hz": [
+      1.0,
+      55.0
+    ],
+    "reported_line_noise_hz": 60.0,
+    "reported_reference": "mastoid",
+    "epoch_rejection_seconds": 1.0,
+    "epoch_rejection_criterion": 6.0,
+    "bad_channel_kurtosis_criterion_reported_by_lab": 1.61
+  },
+  "naming": {
+    "subject_regex": "(sub-[A-Za-z0-9]+|[A-Za-z]+_?\\d{3,}|\\d{3,})",
+    "block_patterns": {
+      "non_perturbation": [
+        "nonpert",
+        "non_pert",
+        "non-pert",
+        "no-perturb",
+        "noperturb",
+        "baseline",
+        "HC1",
+        "HC4"
+      ],
+      "perturbation": [
+        "perturbation",
+        "perturb",
+        "stim",
+        "HC2",
+        "HC3"
+      ]
+    }
+  },
+  "frequency_bands": {
+    "alpha": [
+      8.0,
+      12.0
+    ],
+    "beta": [
+      13.0,
+      30.0
+    ]
+  },
+  "filtering": {
+    "method": "sos_iir",
+    "order": 4,
+    "edge_trim_seconds": 2.0
+  },
+  "corrected_fc": {
+    "symmetric_envelope_hz": 10,
+    "pairwise_envelope_hz": 8,
+    "use_hmm": false,
+    "description": "Broadband uses upstream 1\u201355 Hz; alpha/beta remain separate analyses; full clean HC block duration."
+  },
+  "groups": {
+    "YAC": [
+      "101",
+      "102",
+      "103",
+      "104",
+      "105",
+      "111",
+      "112",
+      "113",
+      "114",
+      "115",
+      "116",
+      "117",
+      "118",
+      "119",
+      "120"
+    ],
+    "OAC": [
+      "202",
+      "205",
+      "206",
+      "207",
+      "208",
+      "209",
+      "210",
+      "211",
+      "214",
+      "215",
+      "216",
+      "217",
+      "218",
+      "219",
+      "221"
+    ],
+    "TCOA": [
+      "401",
+      "402",
+      "403",
+      "404",
+      "406",
+      "407",
+      "408",
+      "409",
+      "410",
+      "411",
+      "412",
+      "413",
+      "414",
+      "415",
+      "416"
+    ]
+  }
+}

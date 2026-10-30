@@ -6,9 +6,34 @@ config.*.tmp.json
 
 # Raw data and generated outputs
 outputs/
+data/
+inputs/
+logs/
+validation/
+qc_validation/
+waveform_data/
+review_evidence/
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.stc
+*.log
+*.lock
+*.zip
+*.7z
+*.tar
+*.gz
+run_status.json
+*_progress.json
+auto_fc_pipeline_v2/extra_data_pipeline/effective_input_manifest.json
+auto_fc_pipeline_v2/extra_data_pipeline/config.clean_bp.json
+auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/config.rank_corrected.json
+auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/projection_compatibility.json
 auto_fc_pipeline_v1/outputs/
 auto_fc_pipeline_v2/outputs/
-TCP_EEG_sync-selected/
+data/TCP_EEG_sync-selected/
+data/VRHCT_CleanData-selected/
 references/
 
 # Python/cache
@@ -19,6 +44,8 @@ __pycache__/
 .numba_cache/
 .mne_fake_home/
 mne_importtime*.log
+tmp/
+.pytest_cache/
 
 # EEG/raw/intermediate data
 *.fif
@@ -45,7 +72,8 @@ mne_importtime*.log
 Thumbs.db
 desktop.ini
 
-# Root-level lab files kept locally, not in the public repo
-MFPRL_default.sfp
-Preprocessing First Steps.py
-Functional Connectivity Documentation.pdf
+# Local lab documents, electrode metadata and reference exports
+/*.sfp
+/*.pdf
+/*.docx
+/Preprocessing*.py

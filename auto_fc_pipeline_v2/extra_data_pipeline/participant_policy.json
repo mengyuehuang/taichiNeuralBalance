@@ -1,0 +1,435 @@
+{
+  "version": 1,
+  "as_of": "2026-10-30",
+  "scope": "PCD only; IDs must retain study prefixes",
+  "source_workbook": "Local source workbook (not distributed)",
+  "source_sha256": "396cbf7792bbdc925dc722a334e8c73c728160c34179944d80d5d17c90bcfe61",
+  "teacher_confirmation": "Teacher reply quoted in chat: exclusion notes apply to current HC; matching TCP/PCD HC protocols; updated preprocessing requested.",
+  "participants": {
+    "PCD103": {
+      "action": "exclude",
+      "evidence": [
+        {
+          "sheet": "summary",
+          "cell": "F4",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F10",
+          "note": "exclude"
+        }
+      ],
+      "preprocessing_notes": [
+        {
+          "cell": "G4",
+          "text": "autoscale at 1044mv- too noisy"
+        },
+        {
+          "cell": "H4",
+          "text": "done, still very noisy"
+        }
+      ],
+      "historical_channel_notes": [
+        {
+          "cell": "K4",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "L4",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "M4",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "N4",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        }
+      ]
+    },
+    "PCD104": {
+      "action": "exclude",
+      "evidence": [
+        {
+          "sheet": "summary",
+          "cell": "F5",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F11",
+          "note": "exclude, EEG was in and out as well"
+        }
+      ],
+      "preprocessing_notes": []
+    },
+    "PCD210": {
+      "action": "exclude",
+      "evidence": [
+        {
+          "sheet": "summary",
+          "cell": "F31",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F106",
+          "note": "exclude"
+        }
+      ],
+      "preprocessing_notes": []
+    },
+    "PCD107": {
+      "action": "exclude",
+      "evidence": [
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F20",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F21",
+          "note": "exclude"
+        }
+      ],
+      "preprocessing_notes": [
+        {
+          "cell": "H8",
+          "text": "done"
+        }
+      ],
+      "historical_channel_notes": [
+        {
+          "cell": "K8",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "L8",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "M8",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "N8",
+          "text": "NA",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        }
+      ]
+    },
+    "PCD202": {
+      "action": "exclude",
+      "evidence": [
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F74",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F75",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F76",
+          "note": "exclude"
+        },
+        {
+          "sheet": "Perturbation Summary",
+          "cell": "F77",
+          "note": "exclude"
+        }
+      ],
+      "preprocessing_notes": []
+    },
+    "PCD101": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [],
+      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+    },
+    "PCD102": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD105": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD106": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD108": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD109": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "G10",
+          "text": "HC4_1 only has 25s data"
+        },
+        {
+          "cell": "H10",
+          "text": "HC4_1 did not run BP because only has 25s data"
+        }
+      ]
+    },
+    "PCD110": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD111": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD112": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD113": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD114": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD115": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD116": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD117": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD118": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "H19",
+          "text": "done"
+        }
+      ],
+      "historical_channel_notes": [
+        {
+          "cell": "K19",
+          "text": "1, 10, 48,52",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "L19",
+          "text": "1, 5, 10, 28, 48. 52",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "M19",
+          "text": "1, 10, 48,52",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "N19",
+          "text": "1, 10, 48,52",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        }
+      ]
+    },
+    "PCD119": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "G20",
+          "text": "very noisy after bp: HC1 195mv HC2 119, HC3 68mv, HC4 63mv"
+        }
+      ],
+      "quality_review_required": true
+    },
+    "PCD120": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD201": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD203": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [],
+      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+    },
+    "PCD204": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD205": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD206": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "G27",
+          "text": "ICA performed really badly "
+        }
+      ],
+      "quality_review_required": true
+    },
+    "PCD207": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD208": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "G29",
+          "text": "both HC4 & HC4_2 has experiment data"
+        },
+        {
+          "cell": "H29",
+          "text": "done"
+        }
+      ],
+      "historical_channel_notes": [
+        {
+          "cell": "K29",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "L29",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "M29",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        },
+        {
+          "cell": "N29",
+          "text": "none",
+          "action": "provenance only; do not reapply channel exclusions to already backprojected data"
+        }
+      ]
+    },
+    "PCD209": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD212": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD213": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [],
+      "identity_warning": "Repeated identity identifiers require private lab-log confirmation; do not merge or assume independence."
+    },
+    "PCD214": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD215": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD216": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD217": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD218": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": [
+        {
+          "cell": "G38",
+          "text": "all four trial Very bad ICA results"
+        }
+      ],
+      "quality_review_required": true
+    },
+    "PCD219": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD220": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD301": {
+      "action": "retain",
+      "basis": "No explicit exclusion; retained for processing, not final QC approval",
+      "preprocessing_notes": []
+    },
+    "PCD211": {
+      "action": "retain",
+      "basis": "No explicit exclusion; only HC1 available; original row A42 says 211 -no cop"
+    }
+  },
+  "identity_notes": {
+    "master_sheet": "MFPRL_master_sheet_analysis-TCP-PCD.xlsx Sheet1 G2/G24/G34",
+    "repeated_identifier_records": [
+      "PCD101",
+      "PCD203",
+      "PCD213"
+    ],
+    "other_folder_copy_notes": "Vizard_note B32:B39 suggests 207/211,208/218,209/220 folder copies; not confirmed person identity",
+    "action": "Keep study-qualified IDs; no automatic merge/deletion; inferential independence unresolved"
+  }
+}

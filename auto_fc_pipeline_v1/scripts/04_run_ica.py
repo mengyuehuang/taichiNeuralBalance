@@ -45,6 +45,14 @@ def main() -> None:
         help="Reuse saved ICA files and update review CSV/XLSX plus figures without refitting ICA.",
     )
     parser.add_argument(
+        "--backproject-only",
+        action="store_true",
+        help=(
+            "Use the saved ICA model and existing manual review CSV only to create "
+            "the cleaned/backprojected FIF; do not refit, relabel, or redraw figures."
+        ),
+    )
+    parser.add_argument(
         "--include-regex",
         help="Only process preICA files whose inferred subject/block id matches this regex, e.g. '^105_HC'.",
     )
@@ -85,6 +93,38 @@ def main() -> None:
         ]
 
         ica_path = ica_dir / f"{subject_id}-ica.fif"
+        if ica_path.exists() and preica_file.stat().st_mtime > ica_path.stat().st_mtime:
+            raise RuntimeError(f'{preica_file.name} is newer than its saved ICA. Confirm data/model '
+                               'provenance and refit/review in a separate output directory if the data changed.')
+        if args.backproject_only:
+            if not ica_path.exists():
+                raise FileNotFoundError(f"No saved ICA file found for {subject_id}: {ica_path}")
+            subject_review_dir = participant_output_dir(review_dir, subject_id)
+            review_path = subject_review_dir / f"{subject_id}_ica_review.csv"
+            old_review_path = review_dir / f"{subject_id}_ica_review.csv"
+            if not review_path.exists() and old_review_path.exists():
+                review_path = old_review_path
+            if not review_path.exists():
+                raise FileNotFoundError(
+                    f"No manual review CSV found for {subject_id}; expected {review_path}"
+                )
+            review_table = read_review_table(review_path)
+            exclude = exclusions_from_review(review_table)
+            if not exclude:
+                raise RuntimeError(
+                    f"{review_path} contains no reviewed IC exclusions. Confirm the review "
+                    "before creating the final backprojected file."
+                )
+            ica = mne.preprocessing.read_ica(ica_path)
+            check_component_ids(review_table, ica.n_components_)
+            ica.exclude = exclude
+            cleaned = ica.apply(raw.copy())
+            cleaned_path = cleaned_dir / f"{subject_id}{config['naming']['cleaned_suffix']}"
+            cleaned.save(cleaned_path, overwrite=True)
+            print(f"Applied reviewed IC exclusions {exclude}")
+            print(f"Saved backprojected cleaned raw: {cleaned_path}")
+            continue
+
         if args.figures_only:
             if not ica_path.exists():
                 raise FileNotFoundError(f"No saved ICA file found for {subject_id}: {ica_path}")
@@ -99,7 +139,16 @@ def main() -> None:
             ica = mne.preprocessing.read_ica(ica_path)
             print(f"Loaded existing ICA solution: {ica_path}")
         else:
-            # This mirrors Yang's intent: fit ICA on cleaned preICA data while
+            existing_review = participant_output_dir(review_dir, subject_id) / f"{subject_id}_ica_review.csv"
+            if (ica_path.exists() or existing_review.exists()
+                    or existing_review.with_suffix('.xlsx').exists()
+                    or (review_dir / f"{subject_id}_ica_review.csv").exists()):
+                raise RuntimeError(
+                    f"Existing ICA/review artifacts for {subject_id}. Use --backproject-only, "
+                    "--figures-only, or --reuse-existing-ica. A new ICA fit requires a separate "
+                    "output directory and a new review; old component decisions cannot be reused."
+                )
+            # This mirrors the reference workflow’s intent: fit ICA on cleaned preICA data while
             # ignoring chunks annotated as BAD during the 1-second QC step.
             ica = fit_ica_with_retry(raw, picks, ica_config)
 
@@ -138,7 +187,7 @@ def main() -> None:
             continue
 
         # MNE's ICA.apply removes the selected ICs and projects the remaining
-        # components back to channel space, equivalent to Yang's pop_subcomp step.
+        # components back to channel space, equivalent to the reference workflow’s pop_subcomp step.
         ica.exclude = exclude
         cleaned = ica.apply(raw.copy())
         cleaned_path = cleaned_dir / f"{subject_id}{config['naming']['cleaned_suffix']}"
@@ -287,7 +336,8 @@ def save_review_workbook(review_table: pd.DataFrame, review_path: Path, ica_conf
 
 
 def merge_existing_review(new_table: pd.DataFrame, review_path: Path) -> pd.DataFrame:
-    existing = pd.read_csv(review_path)
+    existing = read_review_table(review_path)
+    check_component_ids(existing, len(new_table))
     legacy_cols = {
         "reviewed_exclude": "review_exclude1",
         "review_notes": "reviewer1_note",
@@ -320,6 +370,41 @@ def merge_existing_review(new_table: pd.DataFrame, review_path: Path) -> pd.Data
     return merged
 
 
+def check_component_ids(table: pd.DataFrame, n_components: int) -> None:
+    ids = pd.to_numeric(table['component'], errors='raise')
+    if ids.duplicated().any() or set(ids) != set(range(n_components)):
+        raise ValueError('Review component IDs must match the saved ICA exactly, without duplicates.')
+
+
+def read_review_table(path: Path) -> pd.DataFrame:
+    """Never overwrite unsynchronized workbook decisions or silently use an older CSV."""
+    table = pd.read_csv(path, keep_default_na=False)
+    workbook = path.with_suffix('.xlsx')
+    if workbook.exists():
+        excel = pd.read_excel(workbook, sheet_name='ica_review', keep_default_na=False)
+        columns = ['component'] + [f'{prefix}{i}{suffix}' for i in range(1, 4)
+                                  for prefix, suffix in [('review_exclude', ''), ('reviewer', ''), ('reviewer', '_note')]]
+        if any(c not in table or c not in excel for c in columns):
+            raise ValueError(f'Missing manual-review columns in {path} or {workbook}')
+        def normalized(frame):
+            frame = frame[columns].copy()
+            frame['component'] = pd.to_numeric(frame['component'], errors='raise')
+            if frame['component'].duplicated().any():
+                raise ValueError(f'Duplicate component IDs in review for {path}')
+            frame = frame.sort_values('component').reset_index(drop=True)
+            for col in columns[1:]:
+                frame[col] = frame[col].astype(str).str.strip()
+                if col.startswith('review_exclude'):
+                    frame[col] = frame[col].str.lower().replace(
+                        {'1': 'true', '1.0': 'true', 'yes': 'true', 'y': 'true',
+                         '0': 'false', '0.0': 'false', 'no': 'false', 'n': 'false'})
+            return frame
+        if not normalized(table).equals(normalized(excel)):
+            raise ValueError(f'XLSX/CSV manual decisions or notes differ for {path.stem}. '
+                             'Synchronize from the reviewed XLSX before continuing; neither file was changed.')
+    return table
+
+
 def exclusions_from_review(review_table: pd.DataFrame) -> list[int]:
     review_cols = [f"review_exclude{idx}" for idx in range(1, 4)]
     present_cols = [col for col in review_cols if col in review_table]
@@ -330,7 +415,11 @@ def exclusions_from_review(review_table: pd.DataFrame) -> list[int]:
     # review_exclude column true. Leave all cells blank until a human has checked.
     reviewed = pd.Series(False, index=review_table.index)
     for col in present_cols:
-        reviewed = reviewed | review_table[col].astype(str).str.lower().isin({"true", "1", "yes", "y"})
+        values = review_table[col].fillna('').astype(str).str.strip().str.lower()
+        true_values = {"true", "1", "1.0", "yes", "y"}
+        if not values.isin(true_values | {"", "false", "0", "0.0", "no", "n"}).all():
+            raise ValueError(f'Invalid TRUE/FALSE value in {col}; check the manual review table.')
+        reviewed = reviewed | values.isin(true_values)
     return review_table.loc[reviewed, "component"].astype(int).tolist()
 
 
@@ -435,7 +524,7 @@ def save_clean_source_trace_figures(
             description = str(annotation["description"])
             if not description.upper().startswith("BAD"):
                 continue
-            onset = float(annotation["onset"])
+            onset = float(annotation["onset"]) - raw.first_time
             duration = float(annotation["duration"])
             if onset > seconds_to_show:
                 continue
@@ -461,6 +550,29 @@ def close_figure(fig: object) -> None:
     plt.close(fig)
 
 
+def segment_psd(trace, sfreq, boundaries):
+    """Average Welch windows without joining samples across BAD/boundary gaps."""
+    import numpy as np
+    from scipy.signal import welch
+
+    valid = np.isfinite(trace)
+    starts = np.flatnonzero(valid & (np.r_[True, ~valid[:-1]] | boundaries))
+    stops = np.flatnonzero(valid & np.r_[~valid[1:] | boundaries[1:], True]) + 1
+    parts = [trace[a:b] for a, b in zip(starts, stops) if b - a >= 2]
+    if not parts:
+        return None
+    nperseg = min(int(2 * sfreq), max(len(part) for part in parts))
+    noverlap = nperseg // 2
+    spectra, weights = [], []
+    for part in parts:
+        if len(part) < nperseg:
+            continue
+        freqs, psd = welch(part, fs=sfreq, nperseg=nperseg, noverlap=noverlap)
+        spectra.append(psd)
+        weights.append(1 + (len(part) - nperseg) // (nperseg - noverlap))
+    return freqs, np.average(spectra, axis=0, weights=weights)
+
+
 def save_source_psd_figure(
     raw: mne.io.BaseRaw,
     ica: ICA,
@@ -474,11 +586,18 @@ def save_source_psd_figure(
 
     import matplotlib.pyplot as plt
     import numpy as np
-    from scipy.signal import welch
 
     sources = ica.get_sources(raw)
     data = sources.get_data(reject_by_annotation="NaN")
     sfreq = raw.info["sfreq"]
+    boundaries = np.zeros(data.shape[1], dtype=bool)
+    boundaries[0] = True
+    for annotation in raw.annotations:
+        desc = str(annotation['description']).lower()
+        if 'boundary' in desc or desc.startswith('edge'):
+            index = int(round((annotation['onset'] - raw.first_time) * sfreq))
+            if 0 <= index < len(boundaries):
+                boundaries[index] = True
     n_components = data.shape[0]
     n_cols = 4
     n_rows = math.ceil(n_components / n_cols)
@@ -496,19 +615,13 @@ def save_source_psd_figure(
             axis.axis("off")
             continue
 
-        trace = data[component_idx]
-        trace = trace[np.isfinite(trace)]
-        if trace.size < 2:
+        result = segment_psd(data[component_idx], sfreq, boundaries)
+        if result is None:
             axis.set_title(f"IC {component_idx}: no data", fontsize=8)
             axis.axis("off")
             continue
 
-        freqs, psd = welch(
-            trace,
-            fs=sfreq,
-            nperseg=min(int(2 * sfreq), trace.size),
-            noverlap=min(int(sfreq), max(trace.size - 1, 0)),
-        )
+        freqs, psd = result
         keep = (freqs >= fmin) & (freqs <= fmax)
         power = 10 * np.log10(psd[keep] + np.finfo(float).eps)
         axis.plot(freqs[keep], power, color="#b71c1c", linewidth=0.9)
