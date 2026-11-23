@@ -1,5 +1,14 @@
 # Auto FC Pipeline v1
 
+## Current project status — 2026-11-23
+
+**PCD: preprocessing/manual review and FC matrix calculations are complete for 33 participants across all four HC blocks (132 blocks). Group figures, QC summaries and the results-sharing package are complete.**
+
+**TCP: awaiting continuation of review under the current protocol.** Previously computed TCP matrices remain available, but their existence does not establish completion of the current channel/interval/ICA review protocol. Next work is TCP review, with channel decisions confirmed before interval screening and component review. No new TCP review was started by this status update.
+
+This is the current project status; dated completion statements below about earlier TCP computations describe historical runs, not completion of the forthcoming protocol-aligned review.
+
+
 This folder is a Python/MNE draft of the upstream preprocessing steps from
 The MATLAB Height Control EEG scripts.
 
@@ -253,7 +262,7 @@ ICA_Review/101/101_HC1_ica_review.csv
 For the current local test batch, the generated files are under:
 
 ```text
-auto_fc_pipeline_v1/outputs/v1_preica_test
+auto_fc_pipeline_v1/outputs/TCP_output
 ```
 
 The local ICA batch contains 18 participants / 72 HC blocks: `101`-`105`, `221`,
@@ -266,7 +275,7 @@ have no HC files in the selected local dataset. This does not imply they have no
 | `PreICA` | Same continuous EEG with `BAD_preICA_auto` annotations |
 | `PreICA_QC` | The 1-second noisy-period measurements and flags |
 | `ICA` | Saved ICA models, needed to reproduce backprojection |
-| `ICA_Review/<participant>` | Matching CSV/XLSX manual decision tables |
+| `ICA_Review/<participant>` (shared output), `ICA_Review/` (single-block output) | Matching CSV/XLSX manual decision tables |
 | `ICA_Figures/<participant>/<HC>` | Topography, source traces, and PSD |
 | `Backprojected` | Channel-space EEG after the explicit IC exclusions |
 
@@ -339,7 +348,7 @@ v1 Backprojected/
 -> 14-ROI symmetric / 100-parcel pairwise whole-recording FC
 ```
 
-Both harmonized v2 routes are now complete for all 18 TCP participants, including `404`, under `../auto_fc_pipeline_v2/outputs/tcp_rank_harmonized/outputs/`. The older `outputs/corrected` results remain historical. Updated QC/group summaries are still outstanding.
+Both harmonized v2 routes are now complete for all 18 TCP participants, including `404`, under `../auto_fc_pipeline_v2/output/TCP_output/tcp_rank_harmonized/outputs/`. The older `outputs/corrected` results remain historical. Updated QC/group summaries are still outstanding.
 See [v2 workflow](../auto_fc_pipeline_v2/readme.md) for commands and result counts.
 There is no active event-epoching stage or HMM in this whole-recording workflow;
 the old epoching placeholder has been removed.
@@ -378,6 +387,12 @@ This recording received an additional **manual time-interval review before ICA**
 
 ICA was refitted on the retained samples. Audited iteration tracing confirmed the weight-change stop at actual iteration 129 (30 ICs); stored n_iter=500 is not evidence of failed convergence. The 108 s strict alternative is a comparison only. New IC decisions came from the completed review workbook; explicit reviewer1_note instructions were given priority, with no explicit conflicts found. `other`/`uncertain` notes were not interpreted as automatic rejection. Twenty ICs were removed; ten fitted ICs retained. Existing v1 backprojection also restores residual PCA dimensions, so this is not a claim of rank 10.
 
-The **current production files** are in `outputs/v1_preica_test/`: `PreICA/404_HC4_preica_raw.fif`, `ICA/404_HC4-ica.fif`, `ICA_Figures/404/HC4/`, `ICA_Review/404/`, and `Backprojected/404_HC4_backproject_raw.fif`. HC1-HC3 BP was verified and retained. All four BP files are readable and finite on retained samples. BP completion is not final scientific/QC approval; 404 harmonized v2 is now complete; this does not establish final QC approval.
+The **current production files** are in `outputs/TCP_output/`: `PreICA/404_HC4_preica_raw.fif`, `ICA/404_HC4-ica.fif`, `ICA_Figures/404/HC4/`, `ICA_Review/404/`, and `Backprojected/404_HC4_backproject_raw.fif`. HC1-HC3 BP was verified and retained. All four BP files are readable and finite on retained samples. BP completion is not final scientific/QC approval; 404 harmonized v2 is now complete; this does not establish final QC approval.
 
-**For the viewer, detailed decisions, scripts, convergence evidence, and old-HC4 backup, see [extra_review/manual_preica_review_404/README.md](extra_review/manual_preica_review_404/README.md).** This case-specific layer has not yet been generalized to all recordings. The standard BP script still reads boolean review columns, not free-text notes; the note-priority rule was reconciled before execution for this case.
+**For the viewer, detailed decisions, scripts, convergence evidence, and old-HC4 backup, see [outputs/PCD_output/manual_preica_review_404/README.md](outputs/PCD_output/manual_preica_review_404/README.md).** The [shared raw EEG review protocol and PCD refit queue](outputs/PCD_output/README.md) document the subsequent rollout. The TCP-wide audit of channel and interval decisions is pending. The standard BP script still reads boolean review columns, not free-text notes; the note-priority rule was reconciled before execution for this case.
+
+Single-block ICA fits store all figures directly in the fit’s `ICA_Figures/` directory. For example, the PCD refit review uses `PCD101/HC1/ICA_Figures/`. Shared output roots containing multiple recordings use `ICA_Figures/<participant>/<HC>/`.
+# Output locations
+
+PCD review workspace: [outputs/PCD_output](outputs/PCD_output/README.md). Main TCP processing: [outputs/TCP_output](outputs/TCP_output/README.md). The PCD workspace also retains shared review tools and historical TCP review records. The 2026-11-18 directory migration preserved processing results and updated downstream references.
+

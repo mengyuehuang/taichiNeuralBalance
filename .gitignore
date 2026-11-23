@@ -26,12 +26,12 @@ review_evidence/
 *.gz
 run_status.json
 *_progress.json
-auto_fc_pipeline_v2/extra_data_pipeline/effective_input_manifest.json
-auto_fc_pipeline_v2/extra_data_pipeline/config.clean_bp.json
-auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/config.rank_corrected.json
-auto_fc_pipeline_v2/extra_data_pipeline/rank_corrected/projection_compatibility.json
+auto_fc_pipeline_v2/output/PCD_output/effective_input_manifest.json
+auto_fc_pipeline_v2/output/PCD_output/config.clean_bp.json
+auto_fc_pipeline_v2/output/PCD_output/rank_corrected/config.rank_corrected.json
+auto_fc_pipeline_v2/output/PCD_output/rank_corrected/projection_compatibility.json
 auto_fc_pipeline_v1/outputs/
-auto_fc_pipeline_v2/outputs/
+auto_fc_pipeline_v2/output/TCP_output/
 data/TCP_EEG_sync-selected/
 data/VRHCT_CleanData-selected/
 references/
@@ -77,3 +77,35 @@ desktop.ini
 /*.pdf
 /*.docx
 /Preprocessing*.py
+
+# Keep relocated review source code/docs visible; generated EEG stays ignored.
+!auto_fc_pipeline_v1/outputs/
+auto_fc_pipeline_v1/outputs/*
+!auto_fc_pipeline_v1/outputs/PCD_output/
+auto_fc_pipeline_v1/outputs/PCD_output/*
+!auto_fc_pipeline_v1/outputs/PCD_output/README.md
+!auto_fc_pipeline_v1/outputs/PCD_output/scripts/
+!auto_fc_pipeline_v1/outputs/PCD_output/manual_preica_review_404/
+auto_fc_pipeline_v1/outputs/PCD_output/manual_preica_review_404/*
+!auto_fc_pipeline_v1/outputs/PCD_output/manual_preica_review_404/README.md
+!auto_fc_pipeline_v1/outputs/PCD_output/manual_preica_review_404/scripts/
+!auto_fc_pipeline_v1/outputs/PCD_output/manual_preica_review_404/src/
+auto_fc_pipeline_v1/maintenance/path_migration_20261118/staged/
+auto_fc_pipeline_v2/maintenance/path_migration_20261118/staged/
+
+# Local delivery packages and cloud-offloaded legacy archives
+/deliverables/
+/archives/
+
+# Generated reporting artifacts (source scripts remain versioned)
+auto_fc_pipeline_v2/output/PCD_output/group_fc_display/
+*.pdf
+*.docx
+*.pptx
+*.inspect.ndjson
+
+# Machine-specific maintenance inventories; retain maintenance README files
+auto_fc_pipeline_v1/maintenance/**/*.json
+auto_fc_pipeline_v1/maintenance/**/*.jsonl
+auto_fc_pipeline_v2/maintenance/**/*.json
+auto_fc_pipeline_v2/maintenance/**/*.jsonl

@@ -1,9 +1,9 @@
 {
   "paths": {
-    "backprojected_dir": "auto_fc_pipeline_v1/outputs/v1_preica_test/Backprojected",
-    "corrected_output_root": "auto_fc_pipeline_v2/outputs/new_rank_corrected_runs",
+    "backprojected_dir": "auto_fc_pipeline_v1/outputs/TCP_output/Backprojected",
+    "corrected_output_root": "auto_fc_pipeline_v2/output/TCP_output/new_rank_corrected_runs",
     "montage_path": "references/montage/MFPRL_UPDATED_V2.sfp",
-    "subjects_dir": "auto_fc_pipeline_v2/outputs/subjects"
+    "subjects_dir": "auto_fc_pipeline_v2/output/TCP_output/subjects"
   },
   "inputs": {
     "backprojected_format": "mne_raw_fif",

@@ -73,6 +73,13 @@ def main() -> None:
     if not preica_files:
         raise FileNotFoundError(f"No preICA FIF files found in {preica_dir}")
 
+    figure_subject = ica_config.get("figure_subject")
+    if figure_subject and any(
+        infer_subject_id(path, config["naming"]["subject_regex"]) != figure_subject
+        for path in preica_files
+    ):
+        raise ValueError("Single-block figure directory contains a different recording.")
+
     for preica_file in preica_files:
         subject_id = infer_subject_id(preica_file, config["naming"]["subject_regex"])
         if args.include_regex and not re.search(args.include_regex, subject_id):
@@ -96,12 +103,15 @@ def main() -> None:
         if ica_path.exists() and preica_file.stat().st_mtime > ica_path.stat().st_mtime:
             raise RuntimeError(f'{preica_file.name} is newer than its saved ICA. Confirm data/model '
                                'provenance and refit/review in a separate output directory if the data changed.')
+        grouped_dir = participant_output_dir(review_dir, subject_id)
+        block_scoped = figure_subject or subject_id == f"{output_root.parent.name}_{output_root.name}"
+        subject_review_dir = review_dir if block_scoped else grouped_dir
+        filename = f"{subject_id}_ica_review.csv"
+        review_path = subject_review_dir / filename
+        old_review_path = (grouped_dir if block_scoped else review_dir) / filename
         if args.backproject_only:
             if not ica_path.exists():
                 raise FileNotFoundError(f"No saved ICA file found for {subject_id}: {ica_path}")
-            subject_review_dir = participant_output_dir(review_dir, subject_id)
-            review_path = subject_review_dir / f"{subject_id}_ica_review.csv"
-            old_review_path = review_dir / f"{subject_id}_ica_review.csv"
             if not review_path.exists() and old_review_path.exists():
                 review_path = old_review_path
             if not review_path.exists():
@@ -129,7 +139,7 @@ def main() -> None:
             if not ica_path.exists():
                 raise FileNotFoundError(f"No saved ICA file found for {subject_id}: {ica_path}")
             ica = mne.preprocessing.read_ica(ica_path)
-            save_ica_figures(raw, ica, figure_dir, subject_id)
+            save_ica_figures(raw, ica, figure_dir, subject_id, single_block=bool(figure_subject))
             print(f"Saved ICA review figures from existing ICA: {subject_id}")
             continue
 
@@ -139,10 +149,10 @@ def main() -> None:
             ica = mne.preprocessing.read_ica(ica_path)
             print(f"Loaded existing ICA solution: {ica_path}")
         else:
-            existing_review = participant_output_dir(review_dir, subject_id) / f"{subject_id}_ica_review.csv"
-            if (ica_path.exists() or existing_review.exists()
-                    or existing_review.with_suffix('.xlsx').exists()
-                    or (review_dir / f"{subject_id}_ica_review.csv").exists()):
+            if ica_path.exists() or any(
+                path.exists() for csv_path in (review_path, old_review_path)
+                for path in (csv_path, csv_path.with_suffix(".xlsx"))
+            ):
                 raise RuntimeError(
                     f"Existing ICA/review artifacts for {subject_id}. Use --backproject-only, "
                     "--figures-only, or --reuse-existing-ica. A new ICA fit requires a separate "
@@ -156,10 +166,7 @@ def main() -> None:
             print(f"Saved ICA solution: {ica_path}")
 
         labels, probabilities = label_ica_components(raw, ica)
-        subject_review_dir = participant_output_dir(review_dir, subject_id)
         subject_review_dir.mkdir(parents=True, exist_ok=True)
-        review_path = subject_review_dir / f"{subject_id}_ica_review.csv"
-        old_review_path = review_dir / f"{subject_id}_ica_review.csv"
         review_table = build_review_table(labels, probabilities, ica_config)
         if review_path.exists():
             review_table = merge_existing_review(review_table, review_path)
@@ -172,7 +179,7 @@ def main() -> None:
         except PermissionError:
             print(f"Review table is open or locked; keeping existing file: {review_path}")
 
-        save_ica_figures(raw, ica, figure_dir, subject_id)
+        save_ica_figures(raw, ica, figure_dir, subject_id, single_block=bool(figure_subject))
 
         reviewed_exclude = exclusions_from_review(review_table)
         if reviewed_exclude:
@@ -423,8 +430,8 @@ def exclusions_from_review(review_table: pd.DataFrame) -> list[int]:
     return review_table.loc[reviewed, "component"].astype(int).tolist()
 
 
-def save_ica_figures(raw: mne.io.BaseRaw, ica: ICA, figure_dir: Path, subject_id: str) -> None:
-    output_dir = figure_output_dir(figure_dir, subject_id)
+def save_ica_figures(raw: mne.io.BaseRaw, ica: ICA, figure_dir: Path, subject_id: str, *, single_block: bool = False) -> None:
+    output_dir = figure_dir if single_block else figure_output_dir(figure_dir, subject_id)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
@@ -464,6 +471,9 @@ def participant_output_dir(root_dir: Path, subject_id: str) -> Path:
 
 
 def figure_output_dir(figure_dir: Path, subject_id: str) -> Path:
+    block_dir = figure_dir.parent
+    if subject_id == f"{block_dir.parent.name}_{block_dir.name}":
+        return figure_dir
     return participant_block_output_dir(figure_dir, subject_id)
 
 
