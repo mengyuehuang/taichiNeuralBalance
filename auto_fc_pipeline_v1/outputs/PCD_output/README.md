@@ -62,6 +62,8 @@ The new entry point bypasses the older chunk z-score and absolute PTP screens. C
 
 ### Review entry points and results before the epoch-policy refits
 
+Historical chronology: pending/reviewer-prepared statements below record the state on their entry date. All 33 included PCD participants subsequently completed review and FC calculation; current TCP protocol-aligned review remains pending.
+
 The channel-screen tables and figures are in each original block's `Manual_Review` folder. They record the four closest available EEG electrodes in standard montage coordinates, complete one-second peak-to-peak measurements and representative waveforms. The links below open the current interval candidates. Approval of a prior model or interval list does not carry over to a changed fit.
 
 | Participant | Block status |

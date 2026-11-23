@@ -18,7 +18,7 @@ Two recordings contributed to one block for three included participants: PCD101 
 Historical 34-participant Clean BP summaries describe an earlier cohort/version and are not the current reviewed cohort. PCD119, PCD206 and PCD218 have historical quality notes but were reviewed and are included; completion does not erase their QC history.
 
 
-> **Archive relocation (2026-11-21):** Historical PCD Clean BP inputs/results and TCP `corrected` were moved to [the legacy archive](../../../archives/legacy_results_20261121/README.md). Historical paths below describe the original run layout; restore instructions and exact mappings are in that archive. Current reviewed PCD and TCP `tcp_rank_harmonized` results remain local.
+> **Archive relocation (2026-11-21):** Historical PCD Clean BP inputs/results and TCP `corrected` were moved to [the persistent archive register](../../maintenance/archive_plan_20261121/README.md). Historical paths below describe the original run layout; restore instructions and exact mappings are in that archive. Current reviewed PCD and TCP `tcp_rank_harmonized` results remain local.
 
 
 This workspace is now `auto_fc_pipeline_v2/output/PCD_output/`. The historical `inputs/`, `rank_corrected/` and 35 plain-ID participant output folders were archived on November 21; current reviewed `outputs/PCDxxx_epoch_union_*` folders remain local. Raw-reviewed run folders and historical Clean BP results remain distinct. Main TCP outputs and cross-study summaries are in [TCP_output](../TCP_output/README.md).
@@ -192,7 +192,7 @@ All four blocks retain 57 EEG channels. Retained durations HC1–HC4: 253.50, 24
 
 ## Archive availability and dependencies (2026-11-21)
 
-See the [persistent archive register](../../maintenance/archive_plan_20261121/README.md) for all 38 directory mappings and recovery dependencies. Current reviewed PCD, completed TCP and report comparisons remain local. Archived files are unnecessary for reading these current results, but can be required for historical reruns/audits. ZIP/cloud completion has not been verified. The register is kept outside the archive so it remains available after cloud offload.
+See the [persistent archive register](../../maintenance/archive_plan_20261121/README.md) for all 38 directory mappings and recovery dependencies. Current reviewed PCD, completed TCP and report comparisons remain local. Archived files are unnecessary for reading these current results, but can be required for historical reruns/audits. User confirmed upload completion on 2026-11-22; the local archive and ZIP were deleted as authorized. Remote integrity was not independently verified. The register is kept outside the archive so it remains available after cloud offload.
 
 ## Cloud offload and local deletion — 2026-11-22
 

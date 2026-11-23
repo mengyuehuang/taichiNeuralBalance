@@ -18,7 +18,7 @@ Two recordings contributed to one block for three included participants: PCD101 
 Historical 34-participant Clean BP summaries describe an earlier cohort/version and are not the current reviewed cohort. PCD119, PCD206 and PCD218 have historical quality notes but were reviewed and are included; completion does not erase their QC history.
 
 
-> **Archive relocation (2026-11-21):** Historical PCD Clean BP inputs/results and TCP `corrected` were moved to [the legacy archive](../archives/legacy_results_20261121/README.md). Historical paths below describe the original run layout; restore instructions and exact mappings are in that archive. Current reviewed PCD and TCP `tcp_rank_harmonized` results remain local.
+> **Archive relocation (2026-11-21):** Historical PCD Clean BP inputs/results and TCP `corrected` were moved to [the persistent archive register](maintenance/archive_plan_20261121/README.md). Historical paths below describe the original run layout; restore instructions and exact mappings are in that archive. Current reviewed PCD and TCP `tcp_rank_harmonized` results remain local.
 
 
 ## Output organization
@@ -413,7 +413,7 @@ The workflow intentionally skips HMM discretization because the current design u
 
 ## Persistent legacy archive register (2026-11-21)
 
-[Exact archived paths, retained outputs and restoration dependencies](maintenance/archive_plan_20261121/README.md). The archive is not required for current PCD reporting; historical TCP and Clean BP reruns can require restoration. Cloud backup completion has not been verified.
+[Exact archived paths, retained outputs and restoration dependencies](maintenance/archive_plan_20261121/README.md). The archive is not required for current PCD reporting; historical TCP and Clean BP reruns can require restoration. User confirmed upload completion on 2026-11-22 and authorized local deletion; remote integrity was not independently verified.
 
 ## Cloud offload and local deletion — 2026-11-22
 

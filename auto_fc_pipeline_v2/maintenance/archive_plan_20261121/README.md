@@ -1,6 +1,6 @@
 # Legacy archive register — 2026-11-21
 
-Status: 38 directories / 6,997 files moved and verified locally; 48.82 GiB. ZIP creation, cloud upload and cloud verification have not been verified by this task. This register remains outside the archive after offload. Do not interpret archive relocation as confirmed cloud backup.
+Current status: the user confirmed upload completion on 2026-11-22, and the local legacy archive directory and ZIP were deleted as authorized. The archive contained 38 directories / 6,997 files (48.82 GiB before ZIP). ZIP entry names/sizes were checked; remote cloud integrity was not independently verified. This local register retains the recovery mappings and inventory.
 
 ## Archived categories
 
@@ -19,7 +19,7 @@ Raw source data, references, v1 PreICA/ICA/backprojection/review records, curren
 
 ## Recovery
 
-Restore only the mapped directories to their original paths; do not overwrite a whole current outputs directory. Historical configs/provenance intentionally retain original paths. Use the archive's file inventory and relocation verification for file-level records. Verify ZIP integrity and completed cloud upload before deleting local archived data. The current archive contents were not edited during this update, to avoid interfering with an in-progress ZIP.
+Restore only the mapped directories to their original paths; do not overwrite a whole current outputs directory. Historical configs/provenance intentionally retain original paths. Use the archive's file inventory and relocation verification for file-level records. Verify ZIP integrity and completed cloud upload before deleting local archived data. The archived contents were not edited while the ZIP was being created; the local archive has since been deleted after user-confirmed upload.
 
 ## Exact directory mappings
 
